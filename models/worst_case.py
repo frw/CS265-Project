@@ -39,12 +39,12 @@ def intermediate(r, w):
     
     return r * read_cost, w * write_cost
 
-linestyles = ['r--', 'r-', 'b--', 'b-', 'g--', 'g-']
-labels = ['Read Optimized Reads', 'Read Optimized Writes',
-        'Write Optimized Reads', 'Write Optimized Writes',
-        'Intermediate Reads', 'Intermediate Writes']
+linestyles = ['r--', 'r-', 'r:', 'b--', 'b-', 'b:', 'g--', 'g-', 'g:']
+labels = ['Read Optimized Reads', 'Read Optimized Writes', 'Read Optimized Total',
+        'Write Optimized Reads', 'Write Optimized Writes', 'Write Optimized Total',
+        'Intermediate Reads', 'Intermediate Writes', 'Intermediate Total']
 x = range(N + 1)
-costs = [[] for i in range(6)]
+costs = [[] for i in range(9)]
 
 # Read/Write ratios
 for i in range(N + 1):
@@ -54,21 +54,24 @@ for i in range(N + 1):
     read_cost, write_cost = write_optimized(r,w)
     costs[0].append(read_cost / N)
     costs[1].append(write_cost / N)
+    costs[2].append((read_cost + write_cost)/ N)
 
     read_cost, write_cost = read_optimized(r,w)
-    costs[2].append(read_cost / N)
-    costs[3].append(write_cost / N)
-    
+    costs[3].append(read_cost / N)
+    costs[4].append(write_cost / N)
+    costs[5].append((read_cost + write_cost)/ N)
+
     read_cost, write_cost = intermediate(r,w)
-    costs[4].append(read_cost / N)
-    costs[5].append(write_cost / N)
+    costs[6].append(read_cost / N)
+    costs[7].append(write_cost / N)
+    costs[8].append((read_cost + write_cost)/ N)
 
 lines = []
 for i, cost in enumerate(costs):
     line = plt.plot(x, cost, linestyles[i], label=labels[i])
     lines.append(line[0])
 
-plt.legend(lines, labels, loc='upper left')
+plt.legend(lines, labels, loc='upper left', prop={'size':10})
 plt.ylabel('# page accesses')
 plt.xlabel('# reads out of 10 queries')
 plt.show()
