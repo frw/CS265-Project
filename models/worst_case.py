@@ -12,11 +12,23 @@ F = 3
 # Number of pages in a file.
 P = 10
 
+# Number of pages in each write
+P_in_write = 5
+
 # Number of pages in an overflow buffer.
 B = 15
 
+# Current number of writes remaining in the overflow buffer for each level
+B_curr = [B / P_in_write] * L
+
 # Total number of queries (for looking at read/write ratio)
 N = 10
+
+# Compute number of available writes in each level
+W_curr = [0] * L
+for i in range(L):
+    W_curr[i] = (F ** i) * (P / P_in_write)
+
 
 # Returns the read and write costs of the read-optimized version of the LSM tree
 def read_optimized(r, w):
@@ -24,20 +36,90 @@ def read_optimized(r, w):
     write_cost = L * 2 * ( P + F * P )
     
     return r * read_cost, w * write_cost
-    
+
+
+# Recursively write down levels and track write costs
+def write_level(level, number, inter):
+    global W_curr
+    global B_curr
+    write_cost = 0
+    if W_curr[level] - number  <= -1:
+        if B_curr[level] - number <= -1:
+            # Write the buffer down to the lower level
+            if inter:
+                write_cost += write_level(level + 1, (B / P_in_write) - B_curr[level], True)
+            else:
+                write_cost += write_level(level + 1, (B / P_in_write) - B_curr[level], False)
+
+            if inter:
+                write_cost += ( B + B * np.log(B) )
+            else:
+                write_cost += 2 * B
+
+            B_curr[level] += ((B / P_in_write) - B_curr[level])
+            # Write to now roomy overflow buffer
+            B_curr[level] -= number
+        else:
+            # Write to overflow buffer
+            B_curr[level] -= number
+    else:
+        # Write to the current level
+        W_curr[level] -= number
+    return write_cost
+
+
 # Returns the read and write costs of the write-optimized version of the LSM tree
-def write_optimized(r, w):
-    read_cost = L * ( np.log(F) + np.log(P) + B )
-    write_cost = L * 2 * B
-    
-    return r * read_cost, w * write_cost
-    
+def write_optimized(r, w, worst_case=True):
+    if worst_case:
+        read_cost = L * ( np.log(F) + np.log(P) + B )
+        write_cost = L * 2 * B
+
+        return r * read_cost, w * write_cost
+    else:
+        write_cost = 0
+        for write_no in range(w):
+            write_cost += write_level(0, 1, False)
+
+        # Still worst case read, but read only part of the tree that exists
+        read_cost = 0
+        for level in range(L):
+            if W_curr[level] == (F ** level) * (P / P_in_write):
+                break
+            else:
+                read_cost += ( np.log(F) + np.log(P) + ((B / P_in_write) - B_curr[level]) * P_in_write )
+
+        return read_cost, write_cost
+
+
 # Returns the read and write costs of the intermediate version of the LSM tree
-def intermediate(r, w):
-    read_cost = L * ( np.log(F) + np.log(P) + np.log(B) )
-    write_cost = L * ( B + B * np.log(B) )
-    
-    return r * read_cost, w * write_cost
+def intermediate(r, w, worst_case=True):
+    if worst_case:
+        read_cost = L * ( np.log(F) + np.log(P) + np.log(B) )
+        write_cost = L * ( B + B * np.log(B) )
+
+        return r * read_cost, w * write_cost
+    else:
+        write_cost = 0
+        for write_no in range(w):
+            write_cost += write_level(0, 1, True)
+
+        # Still worst case read, but read only part of the tree that exists
+        read_cost = 0
+        for level in range(L):
+            if W_curr[level] == (F ** level) * (P / P_in_write):
+                break
+            else:
+                # if buffer exists, include binary scan of it in cost
+                if ((B / P_in_write) - B_curr[level]) * P_in_write == 0:
+                    read_cost += ( np.log(F) + np.log(P) )
+                else:
+                    read_cost += ( np.log(F) + np.log(P) + np.log(((B / P_in_write) - B_curr[level]) * P_in_write) )
+
+        return read_cost, write_cost
+
+# Testing complex model
+print write_optimized(100, 100, False)
+print intermediate(100, 100, False)
 
 linestyles = ['r--', 'r-', 'r:', 'b--', 'b-', 'b:', 'g--', 'g-', 'g:']
 labels = ['Read Optimized Reads', 'Read Optimized Writes', 'Read Optimized Total',
@@ -47,6 +129,7 @@ x = range(N + 1)
 costs = [[] for i in range(9)]
 
 # Read/Write ratios
+'''
 for i in range(N + 1):
     w = i
     r = N - i
@@ -75,6 +158,7 @@ plt.legend(lines, labels, loc='upper left', prop={'size':10})
 plt.ylabel('# page accesses')
 plt.xlabel('# reads out of 10 queries')
 plt.show()
+'''
 
 # Single read/write
 '''
