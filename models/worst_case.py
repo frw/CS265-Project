@@ -22,12 +22,25 @@ B = 15
 B_curr = [B / P_in_write] * L
 
 # Total number of queries (for looking at read/write ratio)
-N = 10
+N = 100
 
 # Compute number of available writes in each level
 W_curr = [0] * L
 for i in range(L):
     W_curr[i] = (F ** i) * (P / P_in_write)
+
+
+def reset_curr():
+    global B_curr
+    global W_curr
+
+    # Current number of writes remaining in the overflow buffer for each level
+    B_curr = [B / P_in_write] * L
+
+    # Compute number of available writes in each level
+    W_curr = [0] * L
+    for i in range(L):
+        W_curr[i] = (F ** i) * (P / P_in_write)
 
 
 # Returns the read and write costs of the read-optimized version of the LSM tree
@@ -117,10 +130,144 @@ def intermediate(r, w, worst_case=True):
 
         return read_cost, write_cost
 
+
+def set_buffer(buf):
+    global B
+    B = buf
+
+
 # Testing complex model
 print write_optimized(100, 100, False)
+reset_curr()
 print intermediate(100, 100, False)
+reset_curr()
 
+# Complex model -- READ plots
+linestyles = ['r--', 'b--', 'g--', 'y--']
+labels = ['Write Optimized Reads',
+        'Intermediate B=20 Reads',
+          'Intermediate B=30 Reads',
+          'Intermediate B=40 Reads']
+x = range(N + 1)
+costs = [[] for i in range(4)]
+
+for i in range(5):
+    ratio = 0.1 * (i + 1)
+    w = int((1 - ratio) * N)
+    r = int(ratio * N)
+
+    read_cost, write_cost = write_optimized(r,w,False)
+    reset_curr()
+    costs[0].append(read_cost / N)
+    #costs[1].append(write_cost / N)
+    #costs[1].append((read_cost + write_cost)/ N)
+
+    set_buffer(20)
+    reset_curr()
+    read_cost, write_cost = intermediate(r,w,False)
+    reset_curr()
+    costs[1].append(read_cost / N)
+    #costs[4].append(write_cost / N)
+    #costs[3].append((read_cost + write_cost)/ N)
+
+    set_buffer(30)
+    reset_curr()
+    read_cost, write_cost = intermediate(r,w,False)
+    reset_curr()
+    costs[2].append(read_cost / N)
+    #costs[7].append(write_cost / N)
+    #costs[5].append((read_cost + write_cost)/ N)
+
+    set_buffer(40)
+    reset_curr()
+    read_cost, write_cost = intermediate(r,w,False)
+    reset_curr()
+    costs[3].append(read_cost / N)
+    #costs[10].append(write_cost / N)
+    #costs[7].append((read_cost + write_cost)/ N)
+
+lines = []
+for i, cost in enumerate(costs):
+    x = range(len(cost))
+    x = [0.1,0.2,0.3,0.4,0.5]
+    print cost
+    line = plt.plot(x, cost, linestyles[i], label=labels[i])
+    lines.append(line[0])
+
+plt.legend(lines, labels, loc='upper left', prop={'size':10})
+plt.ylabel('# page accesses')
+plt.xlabel('read/write ratio')
+plt.show()
+
+# Complex model -- Write plots
+linestyles = ['r--', 'b--', 'g--', 'y--']
+labels = ['Write Optimized Writes',
+        'Intermediate B=20 Writes',
+          'Intermediate B=30 Writes',
+          'Intermediate B=40 Writes']
+x = range(N + 1)
+costs = [[] for i in range(4)]
+
+for i in range(5):
+    ratio = 0.1 * (i + 1)
+    w = int((1 - ratio) * N)
+    r = int(ratio * N)
+
+    read_cost, write_cost = write_optimized(r,w,False)
+    reset_curr()
+    costs[0].append(read_cost / N)
+    #costs[1].append(write_cost / N)
+    #costs[1].append((read_cost + write_cost)/ N)
+
+    set_buffer(20)
+    reset_curr()
+    read_cost, write_cost = intermediate(r,w,False)
+    reset_curr()
+    costs[1].append(read_cost / N)
+    #costs[4].append(write_cost / N)
+    #costs[3].append((read_cost + write_cost)/ N)
+
+    set_buffer(30)
+    reset_curr()
+    read_cost, write_cost = intermediate(r,w,False)
+    reset_curr()
+    costs[2].append(read_cost / N)
+    #costs[7].append(write_cost / N)
+    #costs[5].append((read_cost + write_cost)/ N)
+
+    set_buffer(40)
+    reset_curr()
+    read_cost, write_cost = intermediate(r,w,False)
+    reset_curr()
+    costs[3].append(read_cost / N)
+    #costs[10].append(write_cost / N)
+    #costs[7].append((read_cost + write_cost)/ N)
+
+lines = []
+for i, cost in enumerate(costs):
+    x = range(len(cost))
+    x = [0.1,0.2,0.3,0.4,0.5]
+    print cost
+    line = plt.plot(x, cost, linestyles[i], label=labels[i])
+    lines.append(line[0])
+
+plt.legend(lines, labels, loc='upper left', prop={'size':10})
+plt.ylabel('# page accesses')
+plt.xlabel('read/write ratio')
+plt.show()
+
+
+linestyles = ['r--', 'r-', 'r:', 'b--', 'b-', 'b:', 'g--', 'g-', 'g:', 'y--', 'y-', 'y:']
+labels = ['Write Optimized Writes', 'Write Optimized Total',
+        'Intermediate B=10 Writes', 'Intermediate B=10 Total',
+          'Intermediate B=20 Writes', 'Intermediate B=20 Total',
+          'Intermediate B=30 Writes', 'Intermediate B=30 Total']
+x = range(N + 1)
+costs = [[] for i in range(8)]
+
+
+# Read/Write ratios
+'''
 linestyles = ['r--', 'r-', 'r:', 'b--', 'b-', 'b:', 'g--', 'g-', 'g:']
 labels = ['Read Optimized Reads', 'Read Optimized Writes', 'Read Optimized Total',
         'Write Optimized Reads', 'Write Optimized Writes', 'Write Optimized Total',
@@ -128,8 +275,6 @@ labels = ['Read Optimized Reads', 'Read Optimized Writes', 'Read Optimized Total
 x = range(N + 1)
 costs = [[] for i in range(9)]
 
-# Read/Write ratios
-'''
 for i in range(N + 1):
     w = i
     r = N - i
