@@ -65,6 +65,7 @@ def write_level(level, number, inter):
                 write_cost += write_level(level + 1, (B / P_in_write) - B_curr[level], False)
 
             if inter:
+                # TODO: Need to change this
                 write_cost += ( B + B * np.log(B) )
             else:
                 write_cost += 2 * B
@@ -199,7 +200,7 @@ plt.ylabel('# page accesses')
 plt.xlabel('read/write ratio')
 plt.show()
 
-# Complex model -- Write plots
+# Complex model -- WRITE plots
 linestyles = ['r--', 'b--', 'g--', 'y--']
 labels = ['Write Optimized Writes',
         'Intermediate B=20 Writes',
@@ -215,32 +216,32 @@ for i in range(5):
 
     read_cost, write_cost = write_optimized(r,w,False)
     reset_curr()
-    costs[0].append(read_cost / N)
-    #costs[1].append(write_cost / N)
+    #costs[0].append(read_cost / N)
+    costs[0].append(write_cost / N)
     #costs[1].append((read_cost + write_cost)/ N)
 
     set_buffer(20)
     reset_curr()
     read_cost, write_cost = intermediate(r,w,False)
     reset_curr()
-    costs[1].append(read_cost / N)
-    #costs[4].append(write_cost / N)
+    #costs[1].append(read_cost / N)
+    costs[1].append(write_cost / N)
     #costs[3].append((read_cost + write_cost)/ N)
 
     set_buffer(30)
     reset_curr()
     read_cost, write_cost = intermediate(r,w,False)
     reset_curr()
-    costs[2].append(read_cost / N)
-    #costs[7].append(write_cost / N)
+    #costs[2].append(read_cost / N)
+    costs[2].append(write_cost / N)
     #costs[5].append((read_cost + write_cost)/ N)
 
     set_buffer(40)
     reset_curr()
     read_cost, write_cost = intermediate(r,w,False)
     reset_curr()
-    costs[3].append(read_cost / N)
-    #costs[10].append(write_cost / N)
+    #costs[3].append(read_cost / N)
+    costs[3].append(write_cost / N)
     #costs[7].append((read_cost + write_cost)/ N)
 
 lines = []
