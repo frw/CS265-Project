@@ -267,6 +267,7 @@ def worst_case_model(fig_offset):
         ['Write Optimized Reads', 'Write Optimized Writes',
             'Write Optimized Total'],
         ['Intermediate Reads', 'Intermediate Writes', 'Intermediate Total']]
+    legend_locs = ['lower left', 'upper left', 'upper left']
     x = range(N + 1)
     costs = [[[] for i in range(3)] for j in range(3)]
 
@@ -297,7 +298,7 @@ def worst_case_model(fig_offset):
             line = plt.plot(x, cost, linestyles[i][j], label=labels[i][j])
             lines.append(line[0])
 
-        plt.legend(lines, labels[i], loc='upper left', prop={'size':10})
+        plt.legend(lines, labels[i], loc=legend_locs[i], prop={'size':10})
         plt.ylabel('# page accesses')
         plt.xlabel('# reads out of 10 queries')
         plt.savefig('worst_case_' + titles[i] + '.png')
