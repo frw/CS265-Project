@@ -260,7 +260,7 @@ def complex_writes():
     plt.show()
 
 # Read/Write ratios
-def worst_case_model():
+def worst_case_model(fig_offset):
     linestyles = [['r--', 'r-', 'r:'], ['b--', 'b-', 'b:'], ['g--', 'g-', 'g:']]
     labels = [['Read Optimized Reads', 'Read Optimized Writes',
         'Read Optimized Total'],
@@ -275,42 +275,46 @@ def worst_case_model():
         r = N - i
 
         read_cost, write_cost = write_optimized(r,w)
-        costs[0][0].append(read_cost / N)
-        costs[0][1].append(write_cost / N)
-        costs[0][2].append((read_cost + write_cost)/ N)
+        costs[0][0].append(0 if r == 0 else read_cost / r)
+        costs[0][1].append(0 if w == 0 else write_cost / w)
+        costs[0][2].append((read_cost + write_cost) / N)
 
         read_cost, write_cost = read_optimized(r,w)
-        costs[1][0].append(read_cost / N)
-        costs[1][1].append(write_cost / N)
-        costs[1][2].append((read_cost + write_cost)/ N)
+        costs[1][0].append(0 if r == 0 else read_cost / r)
+        costs[1][1].append(0 if w == 0 else write_cost / w)
+        costs[1][2].append((read_cost + write_cost) / N)
 
         read_cost, write_cost = intermediate(r,w)
-        costs[2][0].append(read_cost / N)
-        costs[2][1].append(write_cost / N)
-        costs[2][2].append((read_cost + write_cost)/ N)
+        costs[2][0].append(0 if r == 0 else read_cost / r)
+        costs[2][1].append(0 if w == 0 else write_cost / w)
+        costs[2][2].append((read_cost + write_cost) / N)
 
     titles = ['write-opt', 'read-opt', 'inter']
     for i in range(3):
-        plt.figure(i)
+        plt.figure(fig_offset + i + 1)
         lines = []
         for j, cost in enumerate(costs[i]):
             line = plt.plot(x, cost, linestyles[i][j], label=labels[i][j])
             lines.append(line[0])
 
-        #plt.ylim([0,400])
         plt.legend(lines, labels[i], loc='upper left', prop={'size':10})
         plt.ylabel('# page accesses')
         plt.xlabel('# reads out of 10 queries')
         plt.savefig('worst_case_' + titles[i] + '.png')
 
 # Single read/write
-def single_model():
+def single_model(fig_offset):
+    costs = [read_optimized(1, 1), write_optimized(1, 1), intermediate(1, 1)]
+    legends = ['Read Optimized', 'Write Optimized', 'Intermediate']
+    colors = ['r', 'g', 'b']
+        
     # x locations of the groups
     ind = np.arange(2)
 
     # width of bars
     width = 0.15
 
+    plt.figure(fig_offset)
     rects = []
     for i in range(len(costs)):
         rect = plt.bar(ind + i * width, costs[i], width, color=colors[i])
@@ -321,5 +325,5 @@ def single_model():
     plt.legend(rects, legends, loc='upper left')
     plt.savefig('single_model.png')
 
-single_model()
-worst_case_model()
+single_model(1)
+worst_case_model(1)
