@@ -16,7 +16,7 @@ P = 10
 P_in_write = 5
 
 # Number of pages in an overflow buffer.
-B = 15
+B = 5
 
 # Current number of writes remaining in the overflow buffer for each level
 B_curr = [B / P_in_write] * L
@@ -121,7 +121,7 @@ def write_optimized(r, w, worst_case=True):
 def intermediate(r, w, worst_case=True):
     if worst_case:
         read_cost = L * ( np.log(F) + np.log(P) + np.log(B) )
-        write_cost = L * ( B + B * np.log(B) )
+        write_cost = 2 * L * B
 
         return r * read_cost, w * write_cost
     else:
@@ -148,299 +148,104 @@ def set_buffer(buf):
     global B
     B = buf
 
-
-# Testing complex model
-print write_optimized(100, 100, False)
-reset_curr()
-print intermediate(100, 100, False)
-reset_curr()
-
 # Vary B
-linestyles = ['r--', 'b--', 'g--', 'y--']
-labels = ['Write Optimized Reads',
-        'Intermediate Reads',
-          'Read Optimized Reads']
-x = range(N + 1)
-costs = [[] for i in range(3)]
+def vary_b_reads():
+    linestyles = ['r--', 'b--', 'g--', 'y--']
+    labels = ['Write Optimized Reads',
+            'Intermediate Reads',
+              'Read Optimized Reads']
+    x = range(N + 1)
+    costs = [[] for i in range(3)]
 
-for i in range(10):
-    B = 10 * (i + 1)
-    set_buffer(B)
-    reset_curr()
+    for i in range(10):
+        B = 10 * (i + 1)
+        set_buffer(B)
+        reset_curr()
 
-    r=100
-    w=100
+        r=100
+        w=100
 
-    read_cost, write_cost = read_optimized(r,w,False)
-    reset_curr()
-    costs[2].append(read_cost / r)
+        read_cost, write_cost = read_optimized(r,w,False)
+        reset_curr()
+        costs[2].append(read_cost / r)
 
-    read_cost, write_cost = write_optimized(r,w,False)
-    reset_curr()
-    costs[0].append(read_cost / r)
-    #costs[1].append(write_cost / N)
-    #costs[1].append((read_cost + write_cost)/ N)
+        read_cost, write_cost = write_optimized(r,w,False)
+        reset_curr()
+        costs[0].append(read_cost / r)
+        #costs[1].append(write_cost / N)
+        #costs[1].append((read_cost + write_cost)/ N)
 
-    read_cost, write_cost = intermediate(r,w,False)
-    reset_curr()
-    costs[1].append(read_cost / r)
-    #costs[4].append(write_cost / N)
-    #costs[3].append((read_cost + write_cost)/ N)
+        read_cost, write_cost = intermediate(r,w,False)
+        reset_curr()
+        costs[1].append(read_cost / r)
+        #costs[4].append(write_cost / N)
+        #costs[3].append((read_cost + write_cost)/ N)
 
 
-lines = []
-for i, cost in enumerate(costs):
-    x = range(len(cost))
-    x = [10,20,30,40,50,60,70,80,90,100]
-    print cost
-    line = plt.plot(x, cost, linestyles[i], label=labels[i])
-    lines.append(line[0])
+    lines = []
+    for i, cost in enumerate(costs):
+        x = range(len(cost))
+        x = [10,20,30,40,50,60,70,80,90,100]
+        print cost
+        line = plt.plot(x, cost, linestyles[i], label=labels[i])
+        lines.append(line[0])
 
-plt.legend(lines, labels, loc='upper left', prop={'size':10})
-plt.ylabel('Avg # page accesses / read')
-plt.xlabel('Buffer size (in pages)')
-plt.show()
+    plt.legend(lines, labels, loc='upper left', prop={'size':10})
+    plt.ylabel('Avg # page accesses / read')
+    plt.xlabel('Buffer size (in pages)')
+    plt.show()
 
 # Vary B - writes
-linestyles = ['r--', 'b--', 'g--', 'y--']
-labels = ['Write Optimized Writes',
-        'Intermediate Writes',
-          'Read Optimized Writes']
-x = range(N + 1)
-costs = [[] for i in range(3)]
+def vary_b_writes():
+    linestyles = ['r--', 'b--', 'g--', 'y--']
+    labels = ['Write Optimized Writes',
+            'Intermediate Writes',
+            'Read Optimized Writes']
+    x = range(N + 1)
+    costs = [[] for i in range(3)]
 
-for i in range(10):
-    B = 10 * (i + 1)
-    set_buffer(B)
-    reset_curr()
+    for i in range(10):
+        B = 10 * (i + 1)
+        set_buffer(B)
+        reset_curr()
 
-    r=100
-    w=100
+        r=100
+        w=100
 
-    read_cost, write_cost = write_optimized(r,w,False)
-    reset_curr()
-    costs[0].append(write_cost / w)
-    #costs[1].append(write_cost / N)
-    #costs[1].append((read_cost + write_cost)/ N)
+        read_cost, write_cost = write_optimized(r,w,False)
+        reset_curr()
+        costs[0].append(write_cost / w)
+        #costs[1].append(write_cost / N)
+        #costs[1].append((read_cost + write_cost)/ N)
 
-    read_cost, write_cost = intermediate(r,w,False)
-    reset_curr()
-    costs[1].append(write_cost / w)
-    #costs[4].append(write_cost / N)
-    #costs[3].append((read_cost + write_cost)/ N)
+        read_cost, write_cost = intermediate(r,w,False)
+        reset_curr()
+        costs[1].append(write_cost / w)
+        #costs[4].append(write_cost / N)
+        #costs[3].append((read_cost + write_cost)/ N)
 
-    set_buffer(5)
-    reset_curr()
+        set_buffer(5)
+        reset_curr()
 
-    read_cost, write_cost = read_optimized(r,w,False)
-    reset_curr()
-    costs[2].append(write_cost / w)
-
-
-lines = []
-for i, cost in enumerate(costs):
-    x = range(len(cost))
-    x = [10,20,30,40,50,60,70,80,90,100]
-    print cost
-    line = plt.plot(x, cost, linestyles[i], label=labels[i])
-    lines.append(line[0])
-
-plt.legend(lines, labels, loc='upper left', prop={'size':10})
-plt.ylabel('Avg # page accesses / write')
-plt.xlabel('Buffer size (in pages)')
-plt.show()
-
-# Complex model -- READ plots
-linestyles = ['r--', 'b--', 'g--', 'y--']
-labels = ['Write Optimized Reads',
-        'Intermediate B=20 Reads',
-          'Intermediate B=30 Reads',
-          'Intermediate B=40 Reads']
-x = range(N + 1)
-costs = [[] for i in range(4)]
-
-for i in range(5):
-    ratio = 0.1 * (i + 1)
-    #w = int((1 - ratio) * N)
-    w = int(N)
-    r = int(ratio * N)
-    print r, w
-
-    set_buffer(20)
-    reset_curr()
-    read_cost, write_cost = write_optimized(r,w,False)
-    print read_cost,write_cost
-    reset_curr()
-    costs[0].append(read_cost / r)
-    #costs[1].append(write_cost / N)
-    #costs[1].append((read_cost + write_cost)/ N)
-
-    set_buffer(20)
-    reset_curr()
-    read_cost, write_cost = intermediate(r,w,False)
-    reset_curr()
-    costs[1].append(read_cost / r)
-    #costs[4].append(write_cost / N)
-    #costs[3].append((read_cost + write_cost)/ N)
-
-    set_buffer(30)
-    reset_curr()
-    read_cost, write_cost = intermediate(r,w,False)
-    reset_curr()
-    costs[2].append(read_cost / r)
-    #costs[7].append(write_cost / N)
-    #costs[5].append((read_cost + write_cost)/ N)
-
-    set_buffer(40)
-    reset_curr()
-    read_cost, write_cost = intermediate(r,w,False)
-    reset_curr()
-    costs[3].append(read_cost / r)
-    #costs[10].append(write_cost / N)
-    #costs[7].append((read_cost + write_cost)/ N)
-
-lines = []
-for i, cost in enumerate(costs):
-    x = range(len(cost))
-    x = [0.1,0.2,0.3,0.4,0.5]
-    print cost
-    line = plt.plot(x, cost, linestyles[i], label=labels[i])
-    lines.append(line[0])
-
-plt.legend(lines, labels, loc='upper left', prop={'size':10})
-plt.ylabel('# page accesses')
-plt.xlabel('read/write ratio')
-plt.show()
-
-# Complex model -- WRITE plots
-linestyles = ['r--', 'b--', 'g--', 'y--']
-labels = ['Write Optimized Writes',
-        'Intermediate B=20 Writes',
-          'Intermediate B=30 Writes',
-          'Intermediate B=40 Writes']
-x = range(N + 1)
-costs = [[] for i in range(4)]
-
-for i in range(5):
-    ratio = 0.1 * (i + 1)
-    #w = int((1 - ratio) * N)
-    w = N
-    r = int(ratio * N)
-
-    read_cost, write_cost = write_optimized(r,w,False)
-    reset_curr()
-    #costs[0].append(read_cost / N)
-    costs[0].append(write_cost / w)
-    #costs[1].append((read_cost + write_cost)/ N)
-
-    set_buffer(20)
-    reset_curr()
-    read_cost, write_cost = intermediate(r,w,False)
-    reset_curr()
-    #costs[1].append(read_cost / N)
-    costs[1].append(write_cost / w)
-    #costs[3].append((read_cost + write_cost)/ N)
-
-    set_buffer(30)
-    reset_curr()
-    read_cost, write_cost = intermediate(r,w,False)
-    reset_curr()
-    #costs[2].append(read_cost / N)
-    costs[2].append(write_cost / w)
-    #costs[5].append((read_cost + write_cost)/ N)
-
-    set_buffer(40)
-    reset_curr()
-    read_cost, write_cost = intermediate(r,w,False)
-    reset_curr()
-    #costs[3].append(read_cost / N)
-    costs[3].append(write_cost / w)
-    #costs[7].append((read_cost + write_cost)/ N)
-
-lines = []
-for i, cost in enumerate(costs):
-    x = range(len(cost))
-    x = [0.1,0.2,0.3,0.4,0.5]
-    print cost
-    line = plt.plot(x, cost, linestyles[i], label=labels[i])
-    lines.append(line[0])
-
-plt.legend(lines, labels, loc='upper left', prop={'size':10})
-plt.ylabel('# page accesses')
-plt.xlabel('read/write ratio')
-plt.show()
+        read_cost, write_cost = read_optimized(r,w,False)
+        reset_curr()
+        costs[2].append(write_cost / w)
 
 
-linestyles = ['r--', 'r-', 'r:', 'b--', 'b-', 'b:', 'g--', 'g-', 'g:', 'y--', 'y-', 'y:']
-labels = ['Write Optimized Writes', 'Write Optimized Total',
-        'Intermediate B=10 Writes', 'Intermediate B=10 Total',
-          'Intermediate B=20 Writes', 'Intermediate B=20 Total',
-          'Intermediate B=30 Writes', 'Intermediate B=30 Total']
-x = range(N + 1)
-costs = [[] for i in range(8)]
+    lines = []
+    for i, cost in enumerate(costs):
+        x = range(len(cost))
+        x = [10,20,30,40,50,60,70,80,90,100]
+        print cost
+        line = plt.plot(x, cost, linestyles[i], label=labels[i])
+        lines.append(line[0])
 
+    plt.legend(lines, labels, loc='upper left', prop={'size':10})
+    plt.ylabel('Avg # page accesses / write')
+    plt.xlabel('Buffer size (in pages)')
+    plt.show()
 
-# Read/Write ratios
-'''
-linestyles = ['r--', 'r-', 'r:', 'b--', 'b-', 'b:', 'g--', 'g-', 'g:']
-labels = ['Read Optimized Reads', 'Read Optimized Writes', 'Read Optimized Total',
-        'Write Optimized Reads', 'Write Optimized Writes', 'Write Optimized Total',
-        'Intermediate Reads', 'Intermediate Writes', 'Intermediate Total']
-x = range(N + 1)
-costs = [[] for i in range(9)]
-
-for i in range(N + 1):
-    w = i
-    r = N - i
-
-    read_cost, write_cost = write_optimized(r,w)
-    costs[0].append(read_cost / N)
-    costs[1].append(write_cost / N)
-    costs[2].append((read_cost + write_cost)/ N)
-
-    read_cost, write_cost = read_optimized(r,w)
-    costs[3].append(read_cost / N)
-    costs[4].append(write_cost / N)
-    costs[5].append((read_cost + write_cost)/ N)
-
-    read_cost, write_cost = intermediate(r,w)
-    costs[6].append(read_cost / N)
-    costs[7].append(write_cost / N)
-    costs[8].append((read_cost + write_cost)/ N)
-
-lines = []
-for i, cost in enumerate(costs):
-    line = plt.plot(x, cost, linestyles[i], label=labels[i])
-    lines.append(line[0])
-
-plt.legend(lines, labels, loc='upper left', prop={'size':10})
-plt.ylabel('# page accesses')
-plt.xlabel('# reads out of 10 queries')
-plt.show()
-'''
-
-# Single read/write
-'''
-# x locations of the groups
-ind = np.arange(2)
-
-# width of bars
-width = 0.15
-
-rects = []
-for i in range(len(costs)):
-    rect = plt.bar(ind + i * width, costs[i], width, color=colors[i])
-    rects.append(rect[0])
-
-plt.xlim((-0.5, 2))
-plt.xticks(ind + width * (2 * len(costs) - 3) / 2, ('Read Costs', 'Write Costs'))
-
-plt.legend(rects, legends, loc='upper left')
-
-plt.show()
-'''
-
-def worst_case_model():
+def worst_case_model(fig_offset):
     linestyles = [['r--', 'r-', 'r:'], ['b--', 'b-', 'b:'], ['g--', 'g-', 'g:']]
     labels = [['Read Optimized Reads', 'Read Optimized Writes',
          'Read Optimized Total'],
@@ -454,48 +259,58 @@ def worst_case_model():
         w = i
         r = N - i
 
-    read_cost, write_cost = write_optimized(r,w)
-    costs[0][0].append(read_cost / N)
-    costs[0][1].append(write_cost / N)
-    costs[0][2].append((read_cost + write_cost)/ N)
+        read_cost, write_cost = write_optimized(r,w)
+        costs[0][0].append(0 if r == 0 else read_cost / r)
+        costs[0][1].append(0 if w == 0 else write_cost / w)
+        costs[0][2].append((read_cost + write_cost)/ N)
 
-    read_cost, write_cost = read_optimized(r,w)
-    costs[1][0].append(read_cost / N)
-    costs[1][1].append(write_cost / N)
-    costs[1][2].append((read_cost + write_cost)/ N)
+        read_cost, write_cost = read_optimized(r,w)
+        costs[1][0].append(0 if r == 0 else read_cost / r)
+        costs[1][1].append(0 if w == 0 else write_cost / w)
+        costs[1][2].append((read_cost + write_cost)/ N)
 
-    read_cost, write_cost = intermediate(r,w)
-    costs[2][0].append(read_cost / N)
-    costs[2][1].append(write_cost / N)
-    costs[2][2].append((read_cost + write_cost)/ N)
+        read_cost, write_cost = intermediate(r,w)
+        costs[2][0].append(0 if r == 0 else read_cost / r)
+        costs[2][1].append(0 if w == 0 else write_cost / w)
+        costs[2][2].append((read_cost + write_cost)/ N)
 
     titles = ['write-opt', 'read-opt', 'inter']
     for i in range(3):
-        plt.figure(i)
+        plt.figure(fig_offset + 1 + i)
         lines = []
         for j, cost in enumerate(costs[i]):
             line = plt.plot(x, cost, linestyles[i][j], label=labels[i][j])
             lines.append(line[0])
 
         #plt.ylim([0,400])
-        plt.legend(lines, labels[i], loc='upper left', prop={'size':10})
+        lgd = plt.legend(lines, labels[i], loc='upper left',
+                bbox_to_anchor=(1, 0.5), prop={'size':10})
         plt.ylabel('# page accesses')
         plt.xlabel('# reads out of 10 queries')
-        plt.savefig('worst_case_' + titles[i] + '.png')
+        plt.savefig('worst_case_' + titles[i] + '.png',
+                bbox_extra_artists=(lgd,), bbox_inches='tight')
 
-def single_model():
+def single_model(fig_offset):
+    costs = [read_optimized(1, 1), write_optimized(1, 1), intermediate(1, 1)]
+    legends = ['Read Optimized', 'Write Optimized', 'Intermediate']
+    colors = ['r', 'g', 'b']
+
     # x locations of the groups
     ind = np.arange(2)
 
+    # width of bars
     width = 0.15
+
+    plt.figure(fig_offset)
     rects = []
     for i in range(len(costs)):
         rect = plt.bar(ind + i * width, costs[i], width, color=colors[i])
         rects.append(rect[0])
+
     plt.xlim((-0.5, 2))
     plt.xticks(ind + width * (2 * len(costs) - 3) / 2, ('Read Costs', 'Write Costs'))
     plt.legend(rects, legends, loc='upper left')
     plt.savefig('single_model.png')
 
-single_model()
-worst_case_model()
+single_model(1)
+worst_case_model(1)
