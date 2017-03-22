@@ -298,10 +298,12 @@ def worst_case_model(fig_offset):
             line = plt.plot(x, cost, linestyles[i][j], label=labels[i][j])
             lines.append(line[0])
 
-        plt.legend(lines, labels[i], loc=legend_locs[i], prop={'size':10})
+        lgd = plt.legend(lines, labels[i], loc=legend_locs[i],
+                bbox_to_anchor=(1, 0.5), prop={'size':10})
         plt.ylabel('# page accesses')
         plt.xlabel('# reads out of 10 queries')
-        plt.savefig('worst_case_' + titles[i] + '.png')
+        plt.savefig('worst_case_' + titles[i] + '.png', bbox_extra_artists=(lgd,),
+                bbox_inches='tight')
 
 # Single read/write
 def single_model(fig_offset):
