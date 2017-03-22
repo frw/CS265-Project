@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Number of levels in the tree.
-L = 5
+L = 15
 
 # Ratio of the size of one level to the next level.
 # This is also the expected number of files one has to touch during compaction
@@ -22,7 +22,7 @@ B = 15
 B_curr = [B / P_in_write] * L
 
 # Total number of queries (for looking at read/write ratio)
-N = 100
+N = 1000
 
 # Compute number of available writes in each level
 W_curr = [0] * L
@@ -44,15 +44,23 @@ def reset_curr():
 
 
 # Returns the read and write costs of the read-optimized version of the LSM tree
-def read_optimized(r, w):
-    read_cost = L * ( np.log(F) + np.log(P) )
-    write_cost = L * 2 * ( P + F * P )
-    
-    return r * read_cost, w * write_cost
+def read_optimized(r, w, worst_case = True):
+    if worst_case:
+        read_cost = L * ( np.log(F) + np.log(P) )
+        write_cost = L * 2 * ( P + F * P )
+
+        return r * read_cost, w * write_cost
+    else:
+        write_cost = 0
+        for write_no in range(w):
+            write_cost += write_level(0, 1, False, True)
+
+        read_cost = L * ( np.log(F) + np.log(P) )
+        return r * read_cost, write_cost
 
 
 # Recursively write down levels and track write costs
-def write_level(level, number, inter):
+def write_level(level, number, inter, read_opt=False):
     global W_curr
     global B_curr
     write_cost = 0
@@ -68,7 +76,10 @@ def write_level(level, number, inter):
                 # TODO: Need to change this
                 write_cost += ( B + B * np.log(B) )
             else:
-                write_cost += 2 * B
+                if read_opt:
+                    write_cost += (2 * B + 2 * F * P)
+                else:
+                    write_cost += 2 * B
 
             B_curr[level] += ((B / P_in_write) - B_curr[level])
             # Write to now roomy overflow buffer
@@ -102,7 +113,7 @@ def write_optimized(r, w, worst_case=True):
             else:
                 read_cost += ( np.log(F) + np.log(P) + ((B / P_in_write) - B_curr[level]) * P_in_write )
 
-        return read_cost, write_cost
+        return r * read_cost, write_cost
 
 
 # Returns the read and write costs of the intermediate version of the LSM tree
@@ -129,7 +140,7 @@ def intermediate(r, w, worst_case=True):
                 else:
                     read_cost += ( np.log(F) + np.log(P) + np.log(((B / P_in_write) - B_curr[level]) * P_in_write) )
 
-        return read_cost, write_cost
+        return r * read_cost, write_cost
 
 
 def set_buffer(buf):
@@ -143,6 +154,101 @@ reset_curr()
 print intermediate(100, 100, False)
 reset_curr()
 
+# Vary B
+linestyles = ['r--', 'b--', 'g--', 'y--']
+labels = ['Write Optimized Reads',
+        'Intermediate Reads',
+          'Read Optimized Reads']
+x = range(N + 1)
+costs = [[] for i in range(3)]
+
+for i in range(10):
+    B = 10 * (i + 1)
+    set_buffer(B)
+    reset_curr()
+
+    r=100
+    w=100
+
+    read_cost, write_cost = read_optimized(r,w,False)
+    reset_curr()
+    costs[2].append(read_cost / r)
+
+    read_cost, write_cost = write_optimized(r,w,False)
+    reset_curr()
+    costs[0].append(read_cost / r)
+    #costs[1].append(write_cost / N)
+    #costs[1].append((read_cost + write_cost)/ N)
+
+    read_cost, write_cost = intermediate(r,w,False)
+    reset_curr()
+    costs[1].append(read_cost / r)
+    #costs[4].append(write_cost / N)
+    #costs[3].append((read_cost + write_cost)/ N)
+
+
+lines = []
+for i, cost in enumerate(costs):
+    x = range(len(cost))
+    x = [10,20,30,40,50,60,70,80,90,100]
+    print cost
+    line = plt.plot(x, cost, linestyles[i], label=labels[i])
+    lines.append(line[0])
+
+plt.legend(lines, labels, loc='upper left', prop={'size':10})
+plt.ylabel('Avg # page accesses / read')
+plt.xlabel('Buffer size (in pages)')
+plt.show()
+
+# Vary B - writes
+linestyles = ['r--', 'b--', 'g--', 'y--']
+labels = ['Write Optimized Writes',
+        'Intermediate Writes',
+          'Read Optimized Writes']
+x = range(N + 1)
+costs = [[] for i in range(3)]
+
+for i in range(10):
+    B = 10 * (i + 1)
+    set_buffer(B)
+    reset_curr()
+
+    r=100
+    w=100
+
+    read_cost, write_cost = write_optimized(r,w,False)
+    reset_curr()
+    costs[0].append(write_cost / w)
+    #costs[1].append(write_cost / N)
+    #costs[1].append((read_cost + write_cost)/ N)
+
+    read_cost, write_cost = intermediate(r,w,False)
+    reset_curr()
+    costs[1].append(write_cost / w)
+    #costs[4].append(write_cost / N)
+    #costs[3].append((read_cost + write_cost)/ N)
+
+    set_buffer(5)
+    reset_curr()
+
+    read_cost, write_cost = read_optimized(r,w,False)
+    reset_curr()
+    costs[2].append(write_cost / w)
+
+
+lines = []
+for i, cost in enumerate(costs):
+    x = range(len(cost))
+    x = [10,20,30,40,50,60,70,80,90,100]
+    print cost
+    line = plt.plot(x, cost, linestyles[i], label=labels[i])
+    lines.append(line[0])
+
+plt.legend(lines, labels, loc='upper left', prop={'size':10})
+plt.ylabel('Avg # page accesses / write')
+plt.xlabel('Buffer size (in pages)')
+plt.show()
+
 # Complex model -- READ plots
 linestyles = ['r--', 'b--', 'g--', 'y--']
 labels = ['Write Optimized Reads',
@@ -154,12 +260,17 @@ costs = [[] for i in range(4)]
 
 for i in range(5):
     ratio = 0.1 * (i + 1)
-    w = int((1 - ratio) * N)
+    #w = int((1 - ratio) * N)
+    w = int(N)
     r = int(ratio * N)
+    print r, w
 
-    read_cost, write_cost = write_optimized(r,w,False)
+    set_buffer(20)
     reset_curr()
-    costs[0].append(read_cost / N)
+    read_cost, write_cost = write_optimized(r,w,False)
+    print read_cost,write_cost
+    reset_curr()
+    costs[0].append(read_cost / r)
     #costs[1].append(write_cost / N)
     #costs[1].append((read_cost + write_cost)/ N)
 
@@ -167,7 +278,7 @@ for i in range(5):
     reset_curr()
     read_cost, write_cost = intermediate(r,w,False)
     reset_curr()
-    costs[1].append(read_cost / N)
+    costs[1].append(read_cost / r)
     #costs[4].append(write_cost / N)
     #costs[3].append((read_cost + write_cost)/ N)
 
@@ -175,7 +286,7 @@ for i in range(5):
     reset_curr()
     read_cost, write_cost = intermediate(r,w,False)
     reset_curr()
-    costs[2].append(read_cost / N)
+    costs[2].append(read_cost / r)
     #costs[7].append(write_cost / N)
     #costs[5].append((read_cost + write_cost)/ N)
 
@@ -183,7 +294,7 @@ for i in range(5):
     reset_curr()
     read_cost, write_cost = intermediate(r,w,False)
     reset_curr()
-    costs[3].append(read_cost / N)
+    costs[3].append(read_cost / r)
     #costs[10].append(write_cost / N)
     #costs[7].append((read_cost + write_cost)/ N)
 
@@ -211,13 +322,14 @@ costs = [[] for i in range(4)]
 
 for i in range(5):
     ratio = 0.1 * (i + 1)
-    w = int((1 - ratio) * N)
+    #w = int((1 - ratio) * N)
+    w = N
     r = int(ratio * N)
 
     read_cost, write_cost = write_optimized(r,w,False)
     reset_curr()
     #costs[0].append(read_cost / N)
-    costs[0].append(write_cost / N)
+    costs[0].append(write_cost / w)
     #costs[1].append((read_cost + write_cost)/ N)
 
     set_buffer(20)
@@ -225,7 +337,7 @@ for i in range(5):
     read_cost, write_cost = intermediate(r,w,False)
     reset_curr()
     #costs[1].append(read_cost / N)
-    costs[1].append(write_cost / N)
+    costs[1].append(write_cost / w)
     #costs[3].append((read_cost + write_cost)/ N)
 
     set_buffer(30)
@@ -233,7 +345,7 @@ for i in range(5):
     read_cost, write_cost = intermediate(r,w,False)
     reset_curr()
     #costs[2].append(read_cost / N)
-    costs[2].append(write_cost / N)
+    costs[2].append(write_cost / w)
     #costs[5].append((read_cost + write_cost)/ N)
 
     set_buffer(40)
@@ -241,7 +353,7 @@ for i in range(5):
     read_cost, write_cost = intermediate(r,w,False)
     reset_curr()
     #costs[3].append(read_cost / N)
-    costs[3].append(write_cost / N)
+    costs[3].append(write_cost / w)
     #costs[7].append((read_cost + write_cost)/ N)
 
 lines = []
