@@ -75,6 +75,7 @@ def write_level(level, number, inter, read_opt=False):
             if inter:
                 # TODO: Need to change this
                 write_cost += ( B + B * np.log(B) )
+                #write_cost += 2 * B
             else:
                 if read_opt:
                     write_cost += (2 * B + 2 * F * P)
@@ -438,3 +439,63 @@ plt.legend(rects, legends, loc='upper left')
 
 plt.show()
 '''
+
+def worst_case_model():
+    linestyles = [['r--', 'r-', 'r:'], ['b--', 'b-', 'b:'], ['g--', 'g-', 'g:']]
+    labels = [['Read Optimized Reads', 'Read Optimized Writes',
+         'Read Optimized Total'],
+         ['Write Optimized Reads', 'Write Optimized Writes',
+             'Write Optimized Total'],
+         ['Intermediate Reads', 'Intermediate Writes', 'Intermediate Total']]
+    x = range(N + 1)
+    costs = [[[] for i in range(3)] for j in range(3)]
+
+    for i in range(N + 1):
+        w = i
+        r = N - i
+
+    read_cost, write_cost = write_optimized(r,w)
+    costs[0][0].append(read_cost / N)
+    costs[0][1].append(write_cost / N)
+    costs[0][2].append((read_cost + write_cost)/ N)
+
+    read_cost, write_cost = read_optimized(r,w)
+    costs[1][0].append(read_cost / N)
+    costs[1][1].append(write_cost / N)
+    costs[1][2].append((read_cost + write_cost)/ N)
+
+    read_cost, write_cost = intermediate(r,w)
+    costs[2][0].append(read_cost / N)
+    costs[2][1].append(write_cost / N)
+    costs[2][2].append((read_cost + write_cost)/ N)
+
+    titles = ['write-opt', 'read-opt', 'inter']
+    for i in range(3):
+        plt.figure(i)
+        lines = []
+        for j, cost in enumerate(costs[i]):
+            line = plt.plot(x, cost, linestyles[i][j], label=labels[i][j])
+            lines.append(line[0])
+
+        #plt.ylim([0,400])
+        plt.legend(lines, labels[i], loc='upper left', prop={'size':10})
+        plt.ylabel('# page accesses')
+        plt.xlabel('# reads out of 10 queries')
+        plt.savefig('worst_case_' + titles[i] + '.png')
+
+def single_model():
+    # x locations of the groups
+    ind = np.arange(2)
+
+    width = 0.15
+    rects = []
+    for i in range(len(costs)):
+        rect = plt.bar(ind + i * width, costs[i], width, color=colors[i])
+        rects.append(rect[0])
+    plt.xlim((-0.5, 2))
+    plt.xticks(ind + width * (2 * len(costs) - 3) / 2, ('Read Costs', 'Write Costs'))
+    plt.legend(rects, legends, loc='upper left')
+    plt.savefig('single_model.png')
+
+single_model()
+worst_case_model()
