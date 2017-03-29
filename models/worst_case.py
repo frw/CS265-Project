@@ -1,8 +1,9 @@
+from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 
 # Number of levels in the tree.
-L = 15
+L = 5
 
 # Ratio of the size of one level to the next level.
 # This is also the expected number of files one has to touch during compaction
@@ -12,246 +13,188 @@ F = 3
 # Number of pages in a file.
 P = 10
 
-# Number of pages in each write
-P_in_write = 5
+# Number of chunks in an overflow buffer.
+B = 2
 
-# Number of pages in an overflow buffer.
-B = 5
+# Number of pages in a chunk.
+C = 10
 
 # Current number of writes remaining in the overflow buffer for each level
-B_curr = [B / P_in_write] * L
+B_curr = [B * C] * L
 
 # Total number of queries (for looking at read/write ratio)
-N = 1000
-
-# Compute number of available writes in each level
-W_curr = [0] * L
-for i in range(L):
-    W_curr[i] = (F ** i) * (P / P_in_write)
-
+N = 100
 
 def reset_curr():
     global B_curr
-    global W_curr
 
     # Current number of writes remaining in the overflow buffer for each level
-    B_curr = [B / P_in_write] * L
-
-    # Compute number of available writes in each level
-    W_curr = [0] * L
-    for i in range(L):
-        W_curr[i] = (F ** i) * (P / P_in_write)
+    B_curr = [B * C] * L
 
 
 # Returns the read and write costs of the read-optimized version of the LSM tree
-def read_optimized(r, w, worst_case = True):
-    if worst_case:
-        read_cost = L * ( np.log(F) + np.log(P) )
-        write_cost = L * 2 * ( P + F * P )
-
-        return r * read_cost, w * write_cost
-    else:
-        write_cost = 0
-        for write_no in range(w):
-            write_cost += write_level(0, 1, False, True)
-
-        read_cost = L * ( np.log(F) + np.log(P) )
-        return r * read_cost, write_cost
+def read_optimized(r, w):
+    read_cost = L * ( np.log(F) + np.log(P) )
+    write_cost = L * 2 * ( P + F * P )
+    
+    return r * read_cost, w * write_cost
 
 
 # Recursively write down levels and track write costs
-def write_level(level, number, inter, read_opt=False):
-    global W_curr
+def write_level(level, number, inter):
     global B_curr
+    
     write_cost = 0
-    if W_curr[level] - number  <= -1:
-        if B_curr[level] - number <= -1:
-            # Write the buffer down to the lower level
-            if inter:
-                write_cost += write_level(level + 1, (B / P_in_write) - B_curr[level], True)
-            else:
-                write_cost += write_level(level + 1, (B / P_in_write) - B_curr[level], False)
+    
+    if level < L - 1and B_curr[level] < number:
+        # Write one chunk down to the next level
+        write_cost += write_level(level + 1, C, inter)
 
-            if inter:
-                # TODO: Need to change this
-                write_cost += ( B + B * np.log(B) )
-                #write_cost += 2 * B
-            else:
-                if read_opt:
-                    write_cost += (2 * B + 2 * F * P)
-                else:
-                    write_cost += 2 * B
-
-            B_curr[level] += ((B / P_in_write) - B_curr[level])
-            # Write to now roomy overflow buffer
-            B_curr[level] -= number
-        else:
-            # Write to overflow buffer
-            B_curr[level] -= number
+        B_curr[level] += C
+        
+        # Write to now roomy overflow buffer
+        B_curr[level] -= number
     else:
-        # Write to the current level
-        W_curr[level] -= number
+        # Write to overflow buffer
+        B_curr[level] -= number
+
+    if inter:
+        # For intermediate solution, we have to keep the buffer sorted,
+        # which means we would have to read through the entire buffer
+        write_cost += B * C - B_curr[level] + number
+    else:
+        write_cost += number
+    
     return write_cost
 
 
 # Returns the read and write costs of the write-optimized version of the LSM tree
 def write_optimized(r, w, worst_case=True):
     if worst_case:
-        read_cost = L * ( np.log(F) + np.log(P) + B )
-        write_cost = L * 2 * B
+        read_cost = L * ( np.log(F) + np.log(P) + B * C )
+        write_cost = L * 2 * C
 
         return r * read_cost, w * write_cost
     else:
         write_cost = 0
-        for write_no in range(w):
+        for i in range(w):
             write_cost += write_level(0, 1, False)
-
-        # Still worst case read, but read only part of the tree that exists
+        
         read_cost = 0
+        # Still worst case read, but read only part of the tree that exists
         for level in range(L):
-            if W_curr[level] == (F ** level) * (P / P_in_write):
-                break
-            else:
-                read_cost += ( np.log(F) + np.log(P) + ((B / P_in_write) - B_curr[level]) * P_in_write )
-
-        return r * read_cost, write_cost
+            read_cost += np.log(F) + np.log(P) + (B * C - B_curr[level])
+        read_cost *= r
+        
+        return read_cost, write_cost
 
 
 # Returns the read and write costs of the intermediate version of the LSM tree
 def intermediate(r, w, worst_case=True):
     if worst_case:
-        read_cost = L * ( np.log(F) + np.log(P) + np.log(B) )
-        write_cost = 2 * L * B
+        read_cost = L * ( np.log(F) + np.log(P) + np.log(B * C) )
+        write_cost = L * 2 * B * C
 
         return r * read_cost, w * write_cost
     else:
         write_cost = 0
-        for write_no in range(w):
+        for i in range(w):
             write_cost += write_level(0, 1, True)
-
-        # Still worst case read, but read only part of the tree that exists
+        
         read_cost = 0
+        # Still worst case read, but read only part of the tree that exists
         for level in range(L):
-            if W_curr[level] == (F ** level) * (P / P_in_write):
-                break
-            else:
-                # if buffer exists, include binary scan of it in cost
-                if ((B / P_in_write) - B_curr[level]) * P_in_write == 0:
-                    read_cost += ( np.log(F) + np.log(P) )
-                else:
-                    read_cost += ( np.log(F) + np.log(P) + np.log(((B / P_in_write) - B_curr[level]) * P_in_write) )
+            read_cost += np.log(F) + np.log(P)
+            
+            buffer_size = B * C - B_curr[level]
+            if buffer_size > 0:
+                read_cost += np.log(buffer_size)
+        read_cost *= r
 
-        return r * read_cost, write_cost
+        return read_cost, write_cost
 
 
 def set_buffer(buf):
     global B
     B = buf
 
-# Vary B
-def vary_b_reads():
-    linestyles = ['r--', 'b--', 'g--', 'y--']
-    labels = ['Write Optimized Reads',
-            'Intermediate Reads',
-              'Read Optimized Reads']
-    x = range(N + 1)
-    costs = [[] for i in range(3)]
+# Vary buffer size
+def vary_b(fig_offset):
+    linestyles = ['r--', 'b--', 'g--']
+    read_labels = ['Write Optimized Reads',
+                   'Intermediate Reads',
+                   'Read Optimized Reads']
+    write_labels = ['Write Optimized Writes',
+                    'Intermediate Writes',
+                    'Read Optimized Writes']
+    x = []
+    read_costs = [[] for i in range(3)]
+    write_costs = [[] for i in range(3)]
 
     for i in range(10):
-        B = 10 * (i + 1)
+        B = 2 * (i + 1)
+        x.append(B)
+        
+        r = 1000
+        w = 1000
+        
         set_buffer(B)
         reset_curr()
-
-        r=100
-        w=100
-
-        read_cost, write_cost = read_optimized(r,w,False)
+        
+        read_cost, write_cost = write_optimized(r, w, False)
         reset_curr()
-        costs[2].append(read_cost / r)
-
-        read_cost, write_cost = write_optimized(r,w,False)
+        read_costs[0].append(read_cost / r)
+        write_costs[0].append(write_cost / w)
+        
+        read_cost, write_cost = intermediate(r, w, False)
         reset_curr()
-        costs[0].append(read_cost / r)
-        #costs[1].append(write_cost / N)
-        #costs[1].append((read_cost + write_cost)/ N)
-
-        read_cost, write_cost = intermediate(r,w,False)
+        read_costs[1].append(read_cost / r)
+        write_costs[1].append(write_cost / w)
+        
+        read_cost, write_cost = read_optimized(r, w)
         reset_curr()
-        costs[1].append(read_cost / r)
-        #costs[4].append(write_cost / N)
-        #costs[3].append((read_cost + write_cost)/ N)
+        read_costs[2].append(read_cost / r)
+        write_costs[2].append(write_cost / w)
 
-
+    plt.figure(fig_offset)
+        
     lines = []
-    for i, cost in enumerate(costs):
-        x = range(len(cost))
-        x = [10,20,30,40,50,60,70,80,90,100]
+    for i, cost in enumerate(read_costs):
         print cost
-        line = plt.plot(x, cost, linestyles[i], label=labels[i])
+        line = plt.plot(x, cost, linestyles[i], label=read_labels[i])
         lines.append(line[0])
 
-    plt.legend(lines, labels, loc='upper left', prop={'size':10})
+    plt.legend(lines, read_labels, loc='upper left', prop={'size':10})
+    plt.yscale('log')
+    plt.ylim((10, 5000))
     plt.ylabel('Avg # page accesses / read')
     plt.xlabel('Buffer size (in pages)')
-    plt.show()
+    
+    plt.savefig('vary_b_reads.png')
+    
+    #####
 
-# Vary B - writes
-def vary_b_writes():
-    linestyles = ['r--', 'b--', 'g--', 'y--']
-    labels = ['Write Optimized Writes',
-            'Intermediate Writes',
-            'Read Optimized Writes']
-    x = range(N + 1)
-    costs = [[] for i in range(3)]
-
-    for i in range(10):
-        B = 10 * (i + 1)
-        set_buffer(B)
-        reset_curr()
-
-        r=100
-        w=100
-
-        read_cost, write_cost = write_optimized(r,w,False)
-        reset_curr()
-        costs[0].append(write_cost / w)
-        #costs[1].append(write_cost / N)
-        #costs[1].append((read_cost + write_cost)/ N)
-
-        read_cost, write_cost = intermediate(r,w,False)
-        reset_curr()
-        costs[1].append(write_cost / w)
-        #costs[4].append(write_cost / N)
-        #costs[3].append((read_cost + write_cost)/ N)
-
-        set_buffer(5)
-        reset_curr()
-
-        read_cost, write_cost = read_optimized(r,w,False)
-        reset_curr()
-        costs[2].append(write_cost / w)
-
-
+    plt.figure(fig_offset + 1)
+        
     lines = []
-    for i, cost in enumerate(costs):
-        x = range(len(cost))
-        x = [10,20,30,40,50,60,70,80,90,100]
+    for i, cost in enumerate(write_costs):
         print cost
-        line = plt.plot(x, cost, linestyles[i], label=labels[i])
+        line = plt.plot(x, cost, linestyles[i], label=write_labels[i])
         lines.append(line[0])
 
-    plt.legend(lines, labels, loc='upper left', prop={'size':10})
+    plt.legend(lines, write_labels, loc='upper left', prop={'size':10})
+    plt.yscale('log')
+    plt.ylim((0, 1200))
     plt.ylabel('Avg # page accesses / write')
     plt.xlabel('Buffer size (in pages)')
-    plt.show()
+    
+    plt.savefig('vary_b_writes.png')
 
+# Read/Write ratios
 def worst_case_model(fig_offset):
+    titles = ['Read Optimized', 'Write Optimized', 'Intermediate']
     linestyles = [['r--', 'r-', 'r:'], ['b--', 'b-', 'b:'], ['g--', 'g-', 'g:']]
-    labels = [['Read Optimized Reads', 'Read Optimized Writes',
-         'Read Optimized Total'],
-         ['Write Optimized Reads', 'Write Optimized Writes',
-             'Write Optimized Total'],
-         ['Intermediate Reads', 'Intermediate Writes', 'Intermediate Total']]
+    labels = ['Reads', 'Writes', 'Total']
     x = range(N + 1)
     costs = [[[] for i in range(3)] for j in range(3)]
 
@@ -259,42 +202,45 @@ def worst_case_model(fig_offset):
         w = i
         r = N - i
 
-        read_cost, write_cost = write_optimized(r,w)
-        costs[0][0].append(0 if r == 0 else read_cost / r)
-        costs[0][1].append(0 if w == 0 else write_cost / w)
-        costs[0][2].append((read_cost + write_cost)/ N)
+        read_cost, write_cost = write_optimized(r, w)
+        costs[0][0].append(read_cost)
+        costs[0][1].append(write_cost)
+        costs[0][2].append(read_cost + write_cost)
 
-        read_cost, write_cost = read_optimized(r,w)
-        costs[1][0].append(0 if r == 0 else read_cost / r)
-        costs[1][1].append(0 if w == 0 else write_cost / w)
-        costs[1][2].append((read_cost + write_cost)/ N)
+        read_cost, write_cost = read_optimized(r, w)
+        costs[1][0].append(read_cost)
+        costs[1][1].append(write_cost)
+        costs[1][2].append(read_cost + write_cost)
 
-        read_cost, write_cost = intermediate(r,w)
-        costs[2][0].append(0 if r == 0 else read_cost / r)
-        costs[2][1].append(0 if w == 0 else write_cost / w)
-        costs[2][2].append((read_cost + write_cost)/ N)
+        read_cost, write_cost = intermediate(r, w)
+        costs[2][0].append(read_cost)
+        costs[2][1].append(write_cost)
+        costs[2][2].append(read_cost + write_cost)
 
-    titles = ['write-opt', 'read-opt', 'inter']
+    plt.figure(fig_offset)
+    f, axes = plt.subplots(1, 3, sharey=True, figsize=(30, 10))
+    
     for i in range(3):
-        plt.figure(fig_offset + 1 + i)
+        ax = axes[i]
+    
         lines = []
         for j, cost in enumerate(costs[i]):
-            line = plt.plot(x, cost, linestyles[i][j], label=labels[i][j])
+            line = ax.plot(x, cost, linestyles[i][j], label=labels[j])
             lines.append(line[0])
 
-        #plt.ylim([0,400])
-        lgd = plt.legend(lines, labels[i], loc='upper left',
-                bbox_to_anchor=(1, 0.5), prop={'size':10})
-        plt.ylabel('# page accesses')
-        plt.xlabel('# reads out of 10 queries')
-        plt.savefig('worst_case_' + titles[i] + '.png',
-                bbox_extra_artists=(lgd,), bbox_inches='tight')
+        ax.legend(lines, labels, loc='upper left')
+        ax.set_title(titles[i])
+        ax.set_ylabel('# page accesses')
+        ax.set_xlabel('# reads out of 10 queries')
+        
+    plt.savefig('worst_case_rw.png')
 
+# Single read/write
 def single_model(fig_offset):
     costs = [read_optimized(1, 1), write_optimized(1, 1), intermediate(1, 1)]
     legends = ['Read Optimized', 'Write Optimized', 'Intermediate']
     colors = ['r', 'g', 'b']
-
+        
     # x locations of the groups
     ind = np.arange(2)
 
@@ -302,6 +248,7 @@ def single_model(fig_offset):
     width = 0.15
 
     plt.figure(fig_offset)
+    
     rects = []
     for i in range(len(costs)):
         rect = plt.bar(ind + i * width, costs[i], width, color=colors[i])
@@ -310,7 +257,9 @@ def single_model(fig_offset):
     plt.xlim((-0.5, 2))
     plt.xticks(ind + width * (2 * len(costs) - 3) / 2, ('Read Costs', 'Write Costs'))
     plt.legend(rects, legends, loc='upper left')
-    plt.savefig('single_model.png')
+    
+    plt.savefig('worst_case_single.png')
 
 single_model(1)
-worst_case_model(1)
+vary_b(3)
+worst_case_model(2)
