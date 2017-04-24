@@ -703,6 +703,10 @@ struct DBOptions {
   // Default: false
   bool use_adaptive_mutex = false;
 
+  // To allow and enable compaction deferment
+  bool allow_defer_compactions;
+  bool defer_compactions;
+
   // Create DBOptions with default values for all fields
   DBOptions();
   // Create DBOptions from Options

@@ -88,11 +88,11 @@ const Comparator* ColumnFamilyHandleImpl::GetComparator() const {
   return cfd()->user_comparator();
 }
 
-void ColumnFamilyHandleImpl::EnableDeferCompactions(
-      const MutableCFOptions& mutable_cf_options) {
+void ColumnFamilyData::EnableDeferCompactions(
+      const MutableCFOptions& mutable_cf_options, ImmutableCFOptions& ioptions) {
 	ColumnFamilyHandle* cfh = GetColumnFamilyHandle();
 	//auto* cfd = reinterpret_cast<ColumnFamilyHandleImpl*>(cfh)->cfd();
-	s = db_->SetOptions(cfh, {{"defer_compactions", "true"}});
+	Status s = db_->SetOptions(cfh, {{"defer_compactions", "true"}});
 	ROCKS_LOG_WARN(ioptions_.info_log,
 	    "[%s] Enabling compaction deferment because we have "
 	    "%d level-0 files rate %" PRIu64,
@@ -687,7 +687,7 @@ void ColumnFamilyData::RecalculateWriteStallConditions(
 	    // If allow_defer_compactions option is set, set the flag to defer
 	    // compaction instead of delaying writes
 	    if (mutable_cf_options.allow_defer_compactions) {
-		    EnableDeferCompactions(mutable_cf_options);
+		    EnableDeferCompactions(mutable_cf_options, ioptions_);
 	    } else {
 		    // L0 is the last two files from stopping.
 		    bool near_stop = vstorage->l0_delay_trigger_count() >=
@@ -716,7 +716,7 @@ void ColumnFamilyData::RecalculateWriteStallConditions(
 	      // If allow_defer_compactions option is set, set the flag to defer
 	      // compaction instead of delaying writes
 	      if (mutable_cf_options.allow_defer_compactions) {
-		      EnableDeferCompactions(mutable_cf_options);
+		      EnableDeferCompactions(mutable_cf_options, ioptions_);
 	      } else {
 		      // If the distance to hard limit is less than 1/4 of the gap
 		      // between soft and hard bytes limit, we think it is near
@@ -754,7 +754,7 @@ void ColumnFamilyData::RecalculateWriteStallConditions(
 	      // If allow_defer_compactions option is set, set the flag to defer
 	      // compaction instead of delaying writes
 	      if (mutable_cf_options.allow_defer_compactions) {
-		      EnableDeferCompactions(mutable_cf_options);
+		      EnableDeferCompactions(mutable_cf_options, ioptions_);
 	      } else {
 		      write_controller_token_ =
 			  write_controller->GetCompactionPressureToken();
@@ -769,7 +769,7 @@ void ColumnFamilyData::RecalculateWriteStallConditions(
 	      // If allow_defer_compactions option is set, set the flag to defer
 	      // compaction instead of delaying writes
 	      if (mutable_cf_options.allow_defer_compactions) {
-		      EnableDeferCompactions(mutable_cf_options);
+		      EnableDeferCompactions(mutable_cf_options, ioptions_);
 	      } else {
 		      // Increase compaction threads if bytes needed for compaction
 		      // exceeds 1/4 of threshold for slowing down.

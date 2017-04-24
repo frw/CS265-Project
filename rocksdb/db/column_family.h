@@ -60,7 +60,6 @@ class ColumnFamilyHandleImpl : public ColumnFamilyHandle {
   virtual const std::string& GetName() const override;
   virtual Status GetDescriptor(ColumnFamilyDescriptor* desc) override;
   virtual const Comparator* GetComparator() const override;
-  virtual void EnableDeferCompaction(const MutableCFOptions& mutable_cf_options);
 
  private:
   ColumnFamilyData* cfd_;
@@ -334,6 +333,8 @@ class ColumnFamilyData {
   void RecalculateWriteStallConditions(
       const MutableCFOptions& mutable_cf_options);
 
+  void EnableDeferCompactions(const MutableCFOptions& mutable_cf_options,
+      const ImmutableCFOptions& ioptions);
  private:
   friend class ColumnFamilySet;
   ColumnFamilyData(uint32_t id, const std::string& name,
