@@ -985,7 +985,6 @@ void DBImpl::MaybeScheduleFlushOrCompaction() {
   }
 
   auto bg_compactions_allowed = BGCompactionsAllowed();
-  auto should_defer_compaction = ShouldDeferCompactions();
 
   // special case -- if max_background_flushes == 0, then schedule flush on a
   // compaction thread
@@ -997,10 +996,6 @@ void DBImpl::MaybeScheduleFlushOrCompaction() {
       bg_flush_scheduled_++;
       env_->Schedule(&DBImpl::BGWorkFlush, this, Env::Priority::LOW, this);
     }
-  }
-
-  if (should_defer_compaction) {
-	  return;
   }
 
   if (bg_compaction_paused_ > 0) {
@@ -1033,11 +1028,6 @@ int DBImpl::BGCompactionsAllowed() const {
   } else {
     return mutable_db_options_.base_background_compactions;
   }
-}
-
-int DBImpl::ShouldDeferCompactions() const {
-  mutex_.AssertHeld();
-  return mutable_db_options_.defer_compactions;
 }
 
 void DBImpl::AddToCompactionQueue(ColumnFamilyData* cfd) {
@@ -1073,6 +1063,10 @@ ColumnFamilyData* DBImpl::PopFirstFromFlushQueue() {
 }
 
 void DBImpl::SchedulePendingFlush(ColumnFamilyData* cfd) {
+  if (cfd->should_defer_compactions()) {
+	  return;
+  }
+
   if (!cfd->pending_flush() && cfd->imm()->IsFlushPending()) {
     AddToFlushQueue(cfd);
     ++unscheduled_flushes_;
@@ -1080,6 +1074,10 @@ void DBImpl::SchedulePendingFlush(ColumnFamilyData* cfd) {
 }
 
 void DBImpl::SchedulePendingCompaction(ColumnFamilyData* cfd) {
+  if (cfd->should_defer_compactions()) {
+	  return;
+  }
+  
   if (!cfd->pending_compaction() && cfd->NeedsCompaction()) {
     AddToCompactionQueue(cfd);
     ++unscheduled_compactions_;

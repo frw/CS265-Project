@@ -325,6 +325,9 @@ class ColumnFamilyData {
   bool pending_flush() { return pending_flush_; }
   bool pending_compaction() { return pending_compaction_; }
 
+  void enable_defer_compactions() { defer_compactions_ = true; }
+  bool should_defer_compactions() { return defer_compactions_; }
+
   // Recalculate some small conditions, which are changed only during
   // compaction, adding new memtable and/or
   // recalculation of compaction score. These values are used in
@@ -333,8 +336,8 @@ class ColumnFamilyData {
   void RecalculateWriteStallConditions(
       const MutableCFOptions& mutable_cf_options);
 
-  void EnableDeferCompactions(const MutableCFOptions& mutable_cf_options,
-      const ImmutableCFOptions& ioptions);
+  void EnableDeferCompactions();
+ 
  private:
   friend class ColumnFamilySet;
   ColumnFamilyData(uint32_t id, const std::string& name,
@@ -412,6 +415,9 @@ class ColumnFamilyData {
 
   // if the database was opened with 2pc enabled
   bool allow_2pc_;
+
+  // If true --> this ColumnFamily's compactions should be deferred
+  bool defer_compactions_;
 };
 
 // ColumnFamilySet has interesting thread-safety requirements
