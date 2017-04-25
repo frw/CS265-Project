@@ -114,8 +114,8 @@ ColumnFamilyOptions::ColumnFamilyOptions(const Options& options)
       max_bytes_for_level_base(options.max_bytes_for_level_base),
       disable_auto_compactions(options.disable_auto_compactions),
       table_factory(options.table_factory),
-      allow_defer_compaction(options.allow_defer_compactions),
-      defer_compactions(options.allow_defer_compactions) {}
+      allow_defer_compactions(options.allow_defer_compactions),
+      defer_compactions(options.defer_compactions) {}
 
 DBOptions::DBOptions() {}
 
@@ -441,6 +441,10 @@ Options::PrepareForBulkLoad()
 
   // The compaction would create large files in L1.
   target_file_size_base = 256 * 1024 * 1024;
+
+  allow_defer_compactions = false;
+  defer_compactions = false;
+
   return this;
 }
 

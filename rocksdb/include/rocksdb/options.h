@@ -270,6 +270,9 @@ struct ColumnFamilyOptions : public AdvancedColumnFamilyOptions {
   explicit ColumnFamilyOptions(const Options& options);
 
   void Dump(Logger* log) const;
+
+  bool allow_defer_compactions = false;
+  bool defer_compactions = false;
 };
 
 enum class WALRecoveryMode : char {
@@ -704,8 +707,10 @@ struct DBOptions {
   bool use_adaptive_mutex = false;
 
   // To allow and enable compaction deferment
+  /*
   bool allow_defer_compactions;
   bool defer_compactions;
+  */
 
   // Create DBOptions with default values for all fields
   DBOptions();

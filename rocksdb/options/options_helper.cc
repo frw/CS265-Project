@@ -173,8 +173,8 @@ ColumnFamilyOptions BuildColumnFamilyOptions(
   // * max_file_size
 
   // Compaction deferment options -- not sure if this is necessary here
-  cf_opts.allow_defer_compaction = mutable_cf_options.allow_defer_compaction;
-  cf_opts.defer_compaction = mutable_cf_options.defer_compaction;
+  cf_opts.allow_defer_compactions = mutable_cf_options.allow_defer_compactions;
+  cf_opts.defer_compactions = mutable_cf_options.defer_compactions;
 
   return cf_opts;
 }
