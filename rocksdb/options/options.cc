@@ -85,7 +85,9 @@ AdvancedColumnFamilyOptions::AdvancedColumnFamilyOptions(const Options& options)
       optimize_filters_for_hits(options.optimize_filters_for_hits),
       paranoid_file_checks(options.paranoid_file_checks),
       force_consistency_checks(options.force_consistency_checks),
-      report_bg_io_stats(options.report_bg_io_stats) {
+      report_bg_io_stats(options.report_bg_io_stats),
+      allow_defer_compactions(options.allow_defer_compactions),
+      defer_compactions(options.allow_defer_compactions) {
   assert(memtable_factory.get() != nullptr);
   if (max_bytes_for_level_multiplier_additional.size() <
       static_cast<unsigned int>(num_levels)) {
@@ -113,9 +115,7 @@ ColumnFamilyOptions::ColumnFamilyOptions(const Options& options)
       prefix_extractor(options.prefix_extractor),
       max_bytes_for_level_base(options.max_bytes_for_level_base),
       disable_auto_compactions(options.disable_auto_compactions),
-      table_factory(options.table_factory),
-      allow_defer_compactions(options.allow_defer_compactions),
-      defer_compactions(options.defer_compactions) {}
+      table_factory(options.table_factory) {}
 
 DBOptions::DBOptions() {}
 

@@ -628,6 +628,8 @@ DEFINE_bool(use_stderr_info_logger, false,
 
 DEFINE_bool(use_blob_db, false, "Whether to use BlobDB. ");
 
+DEFINE_bool(allow_defer_compactions, false, "Whether to allow and enable compaction deferment.");
+
 static enum rocksdb::CompressionType StringToCompressionType(const char* ctype) {
   assert(ctype);
 
@@ -3115,6 +3117,8 @@ void VerifyDBFromDB(std::string& truth_db_name) {
     }
 #endif  // ROCKSDB_LITE
 
+    // defer compaction options
+    options.allow_defer_compactions = FLAGS_allow_defer_compactions;
   }
 
   void InitializeOptionsGeneral(Options* opts) {

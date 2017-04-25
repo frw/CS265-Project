@@ -527,10 +527,9 @@ struct AdvancedColumnFamilyOptions {
   bool report_bg_io_stats = false;
 
   // To allow and enable compaction deferment
-  /*
-  bool allow_defer_compactions;
-  bool defer_compactions;
-*/
+  bool allow_defer_compactions = false;
+  bool defer_compactions = false;
+
   // Create ColumnFamilyOptions with default values for all fields
   AdvancedColumnFamilyOptions();
   // Create ColumnFamilyOptions from Options
