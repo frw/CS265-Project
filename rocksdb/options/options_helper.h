@@ -422,6 +422,14 @@ static std::unordered_map<std::string, OptionTypeInfo> cf_options_type_info = {
      {offset_of(&ColumnFamilyOptions::level0_stop_writes_trigger),
       OptionType::kInt, OptionVerificationType::kNormal, true,
       offsetof(struct MutableCFOptions, level0_stop_writes_trigger)}},
+    {"defer_compactions",
+     {offset_of(&ColumnFamilyOptions::defer_compactions),
+      OptionType::kBoolean, OptionVerificationType::kNormal, true,
+      offsetof(struct MutableCFOptions, defer_compactions)}},
+    {"allow_defer_compactions",
+     {offset_of(&ColumnFamilyOptions::allow_defer_compactions),
+      OptionType::kBoolean, OptionVerificationType::kNormal, true,
+      offsetof(struct MutableCFOptions, allow_defer_compactions)}},
     {"max_grandparent_overlap_factor",
      {0, OptionType::kInt, OptionVerificationType::kDeprecated, true, 0}},
     {"max_mem_compaction_level",
@@ -550,15 +558,7 @@ static std::unordered_map<std::string, OptionTypeInfo> cf_options_type_info = {
       OptionType::kCompactionStyle, OptionVerificationType::kNormal, false, 0}},
     {"compaction_pri",
      {offset_of(&ColumnFamilyOptions::compaction_pri),
-      OptionType::kCompactionPri, OptionVerificationType::kNormal, false, 0}},
-    {"defer_compactions",
-     {offset_of(&ColumnFamilyOptions::defer_compactions),
-      OptionType::kBoolean, OptionVerificationType::kNormal, true,
-      offsetof(struct MutableCFOptions, defer_compactions)}},
-    {"allow_defer_compactions",
-     {offset_of(&ColumnFamilyOptions::allow_defer_compactions),
-      OptionType::kBoolean, OptionVerificationType::kNormal, true,
-      offsetof(struct MutableCFOptions, allow_defer_compactions)}}};
+      OptionType::kCompactionPri, OptionVerificationType::kNormal, false, 0}}};
 
 static std::unordered_map<std::string, OptionTypeInfo>
     block_based_table_type_info = {

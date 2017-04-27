@@ -138,6 +138,8 @@ struct MutableCFOptions {
             options.level0_file_num_compaction_trigger),
         level0_slowdown_writes_trigger(options.level0_slowdown_writes_trigger),
         level0_stop_writes_trigger(options.level0_stop_writes_trigger),
+	defer_compactions(options.defer_compactions), 
+	allow_defer_compactions(options.allow_defer_compactions),
         max_compaction_bytes(options.max_compaction_bytes),
         target_file_size_base(options.target_file_size_base),
         target_file_size_multiplier(options.target_file_size_multiplier),
@@ -149,9 +151,7 @@ struct MutableCFOptions {
             options.max_sequential_skip_in_iterations),
         paranoid_file_checks(options.paranoid_file_checks),
         report_bg_io_stats(options.report_bg_io_stats),
-        compression(options.compression),
-	defer_compactions(options.defer_compactions), 
-	allow_defer_compactions(options.allow_defer_compactions) {
+        compression(options.compression) {
     RefreshDerivedOptions(options.num_levels, options.compaction_style);
   }
 
@@ -169,6 +169,8 @@ struct MutableCFOptions {
         level0_file_num_compaction_trigger(0),
         level0_slowdown_writes_trigger(0),
         level0_stop_writes_trigger(0),
+	defer_compactions(false), 
+	allow_defer_compactions(false), 
         max_compaction_bytes(0),
         target_file_size_base(0),
         target_file_size_multiplier(0),
@@ -177,9 +179,7 @@ struct MutableCFOptions {
         max_sequential_skip_in_iterations(0),
         paranoid_file_checks(false),
         report_bg_io_stats(false),
-        compression(Snappy_Supported() ? kSnappyCompression : kNoCompression), 
-	defer_compactions(false), 
-	allow_defer_compactions(false) {}
+        compression(Snappy_Supported() ? kSnappyCompression : kNoCompression) {} 
 
   // Must be called after any change to MutableCFOptions
   void RefreshDerivedOptions(int num_levels, CompactionStyle compaction_style);
@@ -216,6 +216,8 @@ struct MutableCFOptions {
   int level0_file_num_compaction_trigger;
   int level0_slowdown_writes_trigger;
   int level0_stop_writes_trigger;
+  bool defer_compactions;
+  bool allow_defer_compactions;
   uint64_t max_compaction_bytes;
   uint64_t target_file_size_base;
   int target_file_size_multiplier;
@@ -232,10 +234,6 @@ struct MutableCFOptions {
   // Derived options
   // Per-level target file size.
   std::vector<uint64_t> max_file_size;
-
-  // Compaction deferment related options
-  bool defer_compactions;
-  bool allow_defer_compactions;
 };
 
 uint64_t MultiplyCheckOverflow(uint64_t op1, double op2);

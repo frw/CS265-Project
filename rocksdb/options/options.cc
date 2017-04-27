@@ -60,6 +60,8 @@ AdvancedColumnFamilyOptions::AdvancedColumnFamilyOptions(const Options& options)
       num_levels(options.num_levels),
       level0_slowdown_writes_trigger(options.level0_slowdown_writes_trigger),
       level0_stop_writes_trigger(options.level0_stop_writes_trigger),
+      allow_defer_compactions(options.allow_defer_compactions),
+      defer_compactions(options.defer_compactions), 
       target_file_size_base(options.target_file_size_base),
       target_file_size_multiplier(options.target_file_size_multiplier),
       level_compaction_dynamic_level_bytes(
@@ -85,9 +87,7 @@ AdvancedColumnFamilyOptions::AdvancedColumnFamilyOptions(const Options& options)
       optimize_filters_for_hits(options.optimize_filters_for_hits),
       paranoid_file_checks(options.paranoid_file_checks),
       force_consistency_checks(options.force_consistency_checks),
-      report_bg_io_stats(options.report_bg_io_stats),
-      allow_defer_compactions(options.allow_defer_compactions),
-      defer_compactions(options.allow_defer_compactions) {
+      report_bg_io_stats(options.report_bg_io_stats) {
   assert(memtable_factory.get() != nullptr);
   if (max_bytes_for_level_multiplier_additional.size() <
       static_cast<unsigned int>(num_levels)) {
@@ -115,6 +115,10 @@ ColumnFamilyOptions::ColumnFamilyOptions(const Options& options)
       prefix_extractor(options.prefix_extractor),
       max_bytes_for_level_base(options.max_bytes_for_level_base),
       disable_auto_compactions(options.disable_auto_compactions),
+      /*
+      allow_defer_compactions(options.allow_defer_compactions),
+      defer_compactions(options.defer_compactions),
+      */
       table_factory(options.table_factory) {}
 
 DBOptions::DBOptions() {}
@@ -262,6 +266,10 @@ void ColumnFamilyOptions::Dump(Logger* log) const {
                      level0_slowdown_writes_trigger);
     ROCKS_LOG_HEADER(log, "             Options.level0_stop_writes_trigger: %d",
                      level0_stop_writes_trigger);
+    ROCKS_LOG_HEADER(log, " Options.allow_defer_compactions: %d",
+	allow_defer_compactions);
+    ROCKS_LOG_HEADER(log, " Options.defer_compactions: %d",
+	defer_compactions);
     ROCKS_LOG_HEADER(
         log, "                  Options.target_file_size_base: %" PRIu64,
         target_file_size_base);
@@ -387,6 +395,7 @@ void ColumnFamilyOptions::Dump(Logger* log) const {
                      force_consistency_checks);
     ROCKS_LOG_HEADER(log, "               Options.report_bg_io_stats: %d",
                      report_bg_io_stats);
+
 }  // ColumnFamilyOptions::Dump
 
 void Options::Dump(Logger* log) const {
@@ -412,6 +421,9 @@ Options::PrepareForBulkLoad()
   soft_pending_compaction_bytes_limit = 0;
   hard_pending_compaction_bytes_limit = 0;
 
+  allow_defer_compactions = false;
+  defer_compactions = false;
+  
   // no auto compactions please. The application should issue a
   // manual compaction after all data is loaded into L0.
   disable_auto_compactions = true;
@@ -441,9 +453,6 @@ Options::PrepareForBulkLoad()
 
   // The compaction would create large files in L1.
   target_file_size_base = 256 * 1024 * 1024;
-
-  allow_defer_compactions = false;
-  defer_compactions = false;
 
   return this;
 }

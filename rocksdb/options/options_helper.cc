@@ -146,6 +146,9 @@ ColumnFamilyOptions BuildColumnFamilyOptions(
       mutable_cf_options.level0_slowdown_writes_trigger;
   cf_opts.level0_stop_writes_trigger =
       mutable_cf_options.level0_stop_writes_trigger;
+  // Compaction deferment options -- not sure if this is necessary here
+  cf_opts.allow_defer_compactions = mutable_cf_options.allow_defer_compactions;
+  cf_opts.defer_compactions = mutable_cf_options.defer_compactions;
   cf_opts.max_compaction_bytes = mutable_cf_options.max_compaction_bytes;
   cf_opts.target_file_size_base = mutable_cf_options.target_file_size_base;
   cf_opts.target_file_size_multiplier =
@@ -171,10 +174,6 @@ ColumnFamilyOptions BuildColumnFamilyOptions(
   cf_opts.table_factory = options.table_factory;
   // TODO(yhchiang): find some way to handle the following derived options
   // * max_file_size
-
-  // Compaction deferment options -- not sure if this is necessary here
-  cf_opts.allow_defer_compactions = mutable_cf_options.allow_defer_compactions;
-  cf_opts.defer_compactions = mutable_cf_options.defer_compactions;
 
   return cf_opts;
 }

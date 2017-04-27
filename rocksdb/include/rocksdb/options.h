@@ -271,8 +271,10 @@ struct ColumnFamilyOptions : public AdvancedColumnFamilyOptions {
 
   void Dump(Logger* log) const;
 
+  /*
   bool allow_defer_compactions = false;
   bool defer_compactions = false;
+  */
 };
 
 enum class WALRecoveryMode : char {

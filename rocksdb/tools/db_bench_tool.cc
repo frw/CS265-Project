@@ -526,6 +526,10 @@ DEFINE_int32(level0_slowdown_writes_trigger,
              "Number of files in level-0"
              " that will slow down writes.");
 
+//rocksdb::Options().allow_defer_compactions,
+DEFINE_bool(allow_defer_compactions, false,
+    "Whether to allow and enable compaction deferment.");
+
 DEFINE_int32(level0_file_num_compaction_trigger,
              rocksdb::Options().level0_file_num_compaction_trigger,
              "Number of files in level-0"
@@ -627,8 +631,6 @@ DEFINE_bool(use_stderr_info_logger, false,
             "Write info logs to stderr instead of to LOG file. ");
 
 DEFINE_bool(use_blob_db, false, "Whether to use BlobDB. ");
-
-DEFINE_bool(allow_defer_compactions, false, "Whether to allow and enable compaction deferment.");
 
 static enum rocksdb::CompressionType StringToCompressionType(const char* ctype) {
   assert(ctype);
@@ -3023,6 +3025,8 @@ void VerifyDBFromDB(std::string& truth_db_name) {
         FLAGS_level0_file_num_compaction_trigger;
     options.level0_slowdown_writes_trigger =
       FLAGS_level0_slowdown_writes_trigger;
+    // defer compaction options
+    options.allow_defer_compactions = FLAGS_allow_defer_compactions;
     options.compression = FLAGS_compression_type_e;
     options.compression_opts.level = FLAGS_compression_level;
     options.compression_opts.max_dict_bytes = FLAGS_compression_max_dict_bytes;
@@ -3117,8 +3121,6 @@ void VerifyDBFromDB(std::string& truth_db_name) {
     }
 #endif  // ROCKSDB_LITE
 
-    // defer compaction options
-    options.allow_defer_compactions = FLAGS_allow_defer_compactions;
   }
 
   void InitializeOptionsGeneral(Options* opts) {
@@ -3293,7 +3295,13 @@ void VerifyDBFromDB(std::string& truth_db_name) {
         case RANDOM:
           return rand_->Next() % num_;
         case UNIQUE_RANDOM:
-          assert(next_ + 1 < num_);
+	  /*
+	  if (next_ + 1 >= num_) {
+		fprintf(stdout, "%" PRIu64 "\n", next_);
+		fprintf(stdout, "%" PRIu64 "\n", num_);
+	  }
+          */
+	  assert(next_ + 1 < num_);
           return values_[next_++];
       }
       assert(false);
