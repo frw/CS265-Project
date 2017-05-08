@@ -1011,6 +1011,10 @@ void DBImpl::MaybeScheduleFlushOrCompaction() {
     return;
   }
 
+  if (should_defer_compactions()) {
+	  return;
+  }
+
   if (HasExclusiveManualCompaction()) {
     // only manual compactions are allowed to run. don't schedule automatic
     // compactions
@@ -1022,6 +1026,7 @@ void DBImpl::MaybeScheduleFlushOrCompaction() {
   // compaction threads (1/3 of slowdown threshold?) before you reached the
   // compaction threshold or if slowdown threshold == compaction threshold.
   // In this case, you want to schedule this compaction but not the others.
+  /*
   if (cfd->should_defer_compactions()) {
 	  ROCKS_LOG_INFO(immutable_db_options_.info_log,
 	      "bg_compaction_scheduled: %d, bg_compactions_allowed: %d, unscheduled_compactions: %d",
@@ -1030,6 +1035,7 @@ void DBImpl::MaybeScheduleFlushOrCompaction() {
 	      "Defering compactions, so not scheduling background compaction");
 	  return;
   }
+  */
 
   while (bg_compaction_scheduled_ < bg_compactions_allowed &&
          unscheduled_compactions_ > 0) {

@@ -904,6 +904,12 @@ class DBImpl : public DB {
 
   WriteController write_controller_;
 
+  // For deferring compactions
+  bool defer_compactions_;
+  void enable_defer_compactions() { defer_compactions_ = true; }
+  void disable_defer_compactions() { defer_compactions_ = false; }
+  bool should_defer_compactions() { return defer_compactions_; }
+
   // Size of the last batch group. In slowdown mode, next write needs to
   // sleep if it uses up the quota.
   uint64_t last_batch_group_size_;

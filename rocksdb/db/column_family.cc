@@ -507,6 +507,9 @@ uint64_t ColumnFamilyData::OldestLogToKeep() {
 
 void ColumnFamilyData::EnableDeferCompactions(bool l0_trigger, int l0_num_files,
     uint64_t pending_compaction_bytes, int total_compaction_pressure) {
+	
+	return;
+	
 	// I think we also need to update level0_file_num_compaction_trigger,
 	// as that is what determines if level 0 files get included in the
 	// pending compaction bytes estimate.

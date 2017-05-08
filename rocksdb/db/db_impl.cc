@@ -162,6 +162,7 @@ DBImpl::DBImpl(const DBOptions& options, const std::string& dbname)
                         : 0,
                     immutable_db_options_.write_thread_slow_yield_usec),
       write_controller_(mutable_db_options_.delayed_write_rate),
+      defer_compactions_(false),
       last_batch_group_size_(0),
       unscheduled_flushes_(0),
       unscheduled_compactions_(0),
@@ -2632,7 +2633,12 @@ void DBImpl::RecordReadWriteRatio(Statistics* statistics, uint32_t tickerType, u
 	    ROCKS_LOG_WARN(immutable_db_options_.info_log,
 	    			   "Read-write Ratio: %llu reads, %llu writes, %llu total\n",
 					   reads, writes, total);
+	    if ((float)(writes) / reads < 0.75) {
+		enable_defer_compactions();
+		ROCKS_LOG_WARN(immutable_db_options_.info_log, "Enabled compaction deferment");
+	    }
 	}
+
 }
 
 }  // namespace rocksdb
