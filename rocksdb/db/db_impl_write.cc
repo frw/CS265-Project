@@ -199,6 +199,8 @@ Status DBImpl::WriteImpl(const WriteOptions& write_options,
 
     PERF_TIMER_STOP(write_pre_and_post_process_time);
 
+    RecordReadWriteRatio(stats_, RW_RATIO_WRITES, total_count);
+
     if (status.ok() && !write_options.disableWAL) {
       PERF_TIMER_GUARD(write_wal_time);
       status = WriteToWAL(write_group, cur_log_writer, need_log_sync,

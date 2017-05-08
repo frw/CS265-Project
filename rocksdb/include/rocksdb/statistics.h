@@ -219,6 +219,11 @@ enum Tickers : uint32_t {
   // Number of refill intervals where rate limiter's bytes are fully consumed.
   NUMBER_RATE_LIMITER_DRAINS,
 
+  // Read-write ratio statistics.
+  RW_RATIO_READS,
+  RW_RATIO_WRITES,
+  RW_RATIO_TOTAL,
+
   TICKER_ENUM_MAX
 };
 
@@ -438,7 +443,7 @@ class Statistics {
   virtual void histogramData(uint32_t type,
                              HistogramData* const data) const = 0;
   virtual std::string getHistogramString(uint32_t type) const { return ""; }
-  virtual void recordTick(uint32_t tickerType, uint64_t count = 0) = 0;
+  virtual uint64_t recordTick(uint32_t tickerType, uint64_t count = 0) = 0;
   virtual void setTickerCount(uint32_t tickerType, uint64_t count) = 0;
   virtual uint64_t getAndResetTickerCount(uint32_t tickerType) = 0;
   virtual void measureTime(uint32_t histogramType, uint64_t time) = 0;

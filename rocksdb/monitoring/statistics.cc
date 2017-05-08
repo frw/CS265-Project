@@ -149,18 +149,20 @@ uint64_t StatisticsImpl::getAndResetTickerCount(uint32_t tickerType) {
   return sum;
 }
 
-void StatisticsImpl::recordTick(uint32_t tickerType, uint64_t count) {
+uint64_t StatisticsImpl::recordTick(uint32_t tickerType, uint64_t count) {
+  uint64_t value = 0;
   assert(
     enable_internal_stats_ ?
       tickerType < INTERNAL_TICKER_ENUM_MAX :
       tickerType < TICKER_ENUM_MAX);
   if (tickerType < TICKER_ENUM_MAX || enable_internal_stats_) {
     auto info_ptr = getThreadTickerInfo(tickerType);
-    info_ptr->value.fetch_add(count, std::memory_order_relaxed);
+    value = info_ptr->value.fetch_add(count, std::memory_order_relaxed);
   }
   if (stats_ && tickerType < TICKER_ENUM_MAX) {
     stats_->recordTick(tickerType, count);
   }
+  return value;
 }
 
 void StatisticsImpl::measureTime(uint32_t histogramType, uint64_t value) {

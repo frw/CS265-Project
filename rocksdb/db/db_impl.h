@@ -593,6 +593,8 @@ class DBImpl : public DB {
   uint64_t FindMinLogContainingOutstandingPrep();
   uint64_t FindMinPrepLogReferencedByMemTable();
 
+  void RecordReadWriteRatio(Statistics* statistics, uint32_t tickerType, uint64_t count);
+
  private:
   friend class DB;
   friend class InternalStats;

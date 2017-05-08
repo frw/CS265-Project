@@ -989,6 +989,9 @@ Status DBImpl::GetImpl(const ReadOptions& read_options,
     RecordTick(stats_, BYTES_READ, size);
     MeasureTime(stats_, BYTES_PER_READ, size);
   }
+
+  RecordReadWriteRatio(stats_, RW_RATIO_READS, 1);
+
   return s;
 }
 
@@ -1116,6 +1119,8 @@ std::vector<Status> DBImpl::MultiGet(
   RecordTick(stats_, NUMBER_MULTIGET_BYTES_READ, bytes_read);
   MeasureTime(stats_, BYTES_PER_MULTIGET, bytes_read);
   PERF_TIMER_STOP(get_post_process_time);
+
+  RecordReadWriteRatio(stats_, RW_RATIO_READS, num_keys);
 
   return stat_list;
 }
@@ -2616,5 +2621,18 @@ void DBImpl::WaitForIngestFile() {
 }
 
 #endif  // ROCKSDB_LITE
+
+void DBImpl::RecordReadWriteRatio(Statistics* statistics, uint32_t tickerType, uint64_t count) {
+	RecordTick(statistics, tickerType, count);
+	if (RecordTick(statistics, RW_RATIO_TOTAL, count) > 1000) {
+		uint64_t reads = statistics->getAndResetTickerCount(RW_RATIO_READS);
+		uint64_t writes = statistics->getAndResetTickerCount(RW_RATIO_WRITES);
+		uint64_t total = statistics->getAndResetTickerCount(RW_RATIO_TOTAL);
+
+	    ROCKS_LOG_WARN(immutable_db_options_.info_log,
+	    			   "Read-write Ratio: %llu reads, %llu writes, %llu total\n",
+					   reads, writes, total);
+	}
+}
 
 }  // namespace rocksdb
