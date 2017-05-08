@@ -78,6 +78,8 @@ class WriteController {
 
   uint64_t max_delayed_write_rate() const { return max_delayed_write_rate_; }
 
+  int total_compaction_pressure() const { return total_compaction_pressure_; }
+
  private:
   uint64_t NowMicrosMonotonic(Env* env);
 

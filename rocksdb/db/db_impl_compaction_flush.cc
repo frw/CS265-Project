@@ -121,6 +121,8 @@ Status DBImpl::FlushMemTableToOutputFile(
   }
 
   if (s.ok()) {
+    ROCKS_LOG_INFO(immutable_db_options_.info_log,
+	"Just flushed, checking for compactions.");
     InstallSuperVersionAndScheduleWorkWrapper(cfd, job_context,
                                               mutable_cf_options);
     if (made_progress) {
@@ -971,6 +973,8 @@ void DBImpl::MaybeScheduleFlushOrCompaction() {
   }
   if (bg_work_paused_ > 0) {
     // we paused the background work
+    ROCKS_LOG_INFO(immutable_db_options_.info_log,
+	"Background work is paused");
     return;
   } else if (shutting_down_.load(std::memory_order_acquire)) {
     // DB is being deleted; no more background compactions
@@ -985,6 +989,8 @@ void DBImpl::MaybeScheduleFlushOrCompaction() {
   }
 
   auto bg_compactions_allowed = BGCompactionsAllowed();
+  ROCKS_LOG_INFO(immutable_db_options_.info_log,
+      "Background compactions allowed: %d", bg_compactions_allowed);
 
   // special case -- if max_background_flushes == 0, then schedule flush on a
   // compaction thread
@@ -1000,6 +1006,8 @@ void DBImpl::MaybeScheduleFlushOrCompaction() {
 
   if (bg_compaction_paused_ > 0) {
     // we paused the background compaction
+    ROCKS_LOG_INFO(immutable_db_options_.info_log,
+	"Background work is paused");
     return;
   }
 
@@ -1009,6 +1017,20 @@ void DBImpl::MaybeScheduleFlushOrCompaction() {
     return;
   }
 
+  // It looks like sometimes defer_compactions will be enabled before any
+  // compactions have been scheduled -- if you reached the threshold for increasing
+  // compaction threads (1/3 of slowdown threshold?) before you reached the
+  // compaction threshold or if slowdown threshold == compaction threshold.
+  // In this case, you want to schedule this compaction but not the others.
+  if (cfd->should_defer_compactions()) {
+	  ROCKS_LOG_INFO(immutable_db_options_.info_log,
+	      "bg_compaction_scheduled: %d, bg_compactions_allowed: %d, unscheduled_compactions: %d",
+	      bg_compaction_scheduled_, bg_compactions_allowed, unscheduled_compactions_);
+	  ROCKS_LOG_INFO(immutable_db_options_.info_log,
+	      "Defering compactions, so not scheduling background compaction");
+	  return;
+  }
+
   while (bg_compaction_scheduled_ < bg_compactions_allowed &&
          unscheduled_compactions_ > 0) {
     CompactionArg* ca = new CompactionArg;
@@ -1016,6 +1038,8 @@ void DBImpl::MaybeScheduleFlushOrCompaction() {
     ca->m = nullptr;
     bg_compaction_scheduled_++;
     unscheduled_compactions_--;
+    ROCKS_LOG_INFO(immutable_db_options_.info_log,
+	"Scheduling background compaction with low priority");
     env_->Schedule(&DBImpl::BGWorkCompaction, ca, Env::Priority::LOW, this,
                    &DBImpl::UnscheduleCallback);
   }
@@ -1063,9 +1087,11 @@ ColumnFamilyData* DBImpl::PopFirstFromFlushQueue() {
 }
 
 void DBImpl::SchedulePendingFlush(ColumnFamilyData* cfd) {
+  /*
   if (cfd->should_defer_compactions()) {
 	  return;
   }
+  */
 
   if (!cfd->pending_flush() && cfd->imm()->IsFlushPending()) {
     AddToFlushQueue(cfd);
@@ -1074,11 +1100,12 @@ void DBImpl::SchedulePendingFlush(ColumnFamilyData* cfd) {
 }
 
 void DBImpl::SchedulePendingCompaction(ColumnFamilyData* cfd) {
-  if (cfd->should_defer_compactions()) {
-	  return;
-  }
+  ROCKS_LOG_INFO(immutable_db_options_.info_log,
+      "Maybe adding pending compaction to queue");
   
   if (!cfd->pending_compaction() && cfd->NeedsCompaction()) {
+	  ROCKS_LOG_INFO(immutable_db_options_.info_log,
+	      "Definitely adding pending compaction to queue");
     AddToCompactionQueue(cfd);
     ++unscheduled_compactions_;
   }
@@ -1345,6 +1372,9 @@ Status DBImpl::BackgroundCompaction(bool* made_progress,
 
   bool is_manual = (manual_compaction != nullptr);
 
+  ROCKS_LOG_INFO(immutable_db_options_.info_log, "Executing background compaction, "
+      "is_manual: %d", is_manual);
+
   // (manual_compaction->in_progress == false);
   bool trivial_move_disallowed =
       is_manual && manual_compaction->disallow_trivial_move;
@@ -1400,6 +1430,7 @@ Status DBImpl::BackgroundCompaction(bool* made_progress,
                : m->manual_end->DebugString().c_str()));
     }
   } else if (!compaction_queue_.empty()) {
+
     // cfd is referenced here
     auto cfd = PopFirstFromCompactionQueue();
     // We unreference here because the following code will take a Ref() on
