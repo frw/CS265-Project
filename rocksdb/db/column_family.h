@@ -325,6 +325,7 @@ class ColumnFamilyData {
   bool pending_flush() { return pending_flush_; }
   bool pending_compaction() { return pending_compaction_; }
 
+  void disable_defer_compactions() { defer_compactions_ = false; }
   void enable_defer_compactions() { defer_compactions_ = true; }
   bool should_defer_compactions() { return defer_compactions_; }
 
@@ -336,7 +337,8 @@ class ColumnFamilyData {
   void RecalculateWriteStallConditions(
       const MutableCFOptions& mutable_cf_options);
 
-  void EnableDeferCompactions();
+  void EnableDeferCompactions(bool l0_trigger, int l0_num_files,
+      uint64_t pending_compaction_bytes, int total_compaction_pressure);
  
  private:
   friend class ColumnFamilySet;
