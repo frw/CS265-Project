@@ -194,6 +194,7 @@ DBOptions::DBOptions(const Options& options)
       fail_if_options_file_error(options.fail_if_options_file_error),
       dump_malloc_stats(options.dump_malloc_stats),
       avoid_flush_during_recovery(options.avoid_flush_during_recovery),
+      allow_defer_compaction(options.allow_defer_compaction),
       avoid_flush_during_shutdown(options.avoid_flush_during_shutdown) {
 }
 

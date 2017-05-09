@@ -1012,6 +1012,8 @@ void DBImpl::MaybeScheduleFlushOrCompaction() {
   }
 
   if (should_defer_compactions()) {
+	  ROCKS_LOG_INFO(immutable_db_options_.info_log,
+	      "Compaction deferral enabled -- not scheduling compaction");
 	  return;
   }
 

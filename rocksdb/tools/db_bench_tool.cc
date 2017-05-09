@@ -528,7 +528,9 @@ DEFINE_int32(level0_slowdown_writes_trigger,
 
 //rocksdb::Options().allow_defer_compactions,
 DEFINE_bool(allow_defer_compactions, false,
-    "Whether to allow and enable compaction deferment.");
+    "Whether to allow and enable compaction deferment (cf_options).");
+DEFINE_bool(allow_defer_compaction, false,
+    "Whether to allow and enable compaction deferment (db_options).");
 
 DEFINE_int32(level0_file_num_compaction_trigger,
              rocksdb::Options().level0_file_num_compaction_trigger,
@@ -3026,6 +3028,7 @@ void VerifyDBFromDB(std::string& truth_db_name) {
     options.level0_slowdown_writes_trigger =
       FLAGS_level0_slowdown_writes_trigger;
     // defer compaction options
+    options.allow_defer_compaction = FLAGS_allow_defer_compaction;
     options.allow_defer_compactions = FLAGS_allow_defer_compactions;
     options.compression = FLAGS_compression_type_e;
     options.compression_opts.level = FLAGS_compression_level;

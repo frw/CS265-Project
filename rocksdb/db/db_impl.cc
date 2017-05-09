@@ -2625,20 +2625,33 @@ void DBImpl::WaitForIngestFile() {
 
 void DBImpl::RecordReadWriteRatio(Statistics* statistics, uint32_t tickerType, uint64_t count) {
 	RecordTick(statistics, tickerType, count);
+	
+	if (!immutable_db_options_.allow_defer_compaction) {
+		return;
+	}
+
 	if (RecordTick(statistics, RW_RATIO_TOTAL, count) > 1000) {
 		uint64_t reads = statistics->getAndResetTickerCount(RW_RATIO_READS);
 		uint64_t writes = statistics->getAndResetTickerCount(RW_RATIO_WRITES);
 		uint64_t total = statistics->getAndResetTickerCount(RW_RATIO_TOTAL);
 
-	    ROCKS_LOG_WARN(immutable_db_options_.info_log,
-	    			   "Read-write Ratio: %llu reads, %llu writes, %llu total\n",
-					   reads, writes, total);
-	    if ((float)(writes) / reads < 0.75) {
+	    if (!should_defer_compactions() && (float)(writes) / total > 0.75) {
 		enable_defer_compactions();
+		ROCKS_LOG_WARN(immutable_db_options_.info_log,
+		    "Read-write Ratio: %llu reads, %llu writes, %llu total\n",
+		    reads, writes, total);
 		ROCKS_LOG_WARN(immutable_db_options_.info_log, "Enabled compaction deferment");
+	    } else if (should_defer_compactions() && (float)(writes) / total < 0.25) {
+		disable_defer_compactions();
+		ROCKS_LOG_WARN(immutable_db_options_.info_log,
+		    "Read-write Ratio: %llu reads, %llu writes, %llu total\n",
+		    reads, writes, total);
+		ROCKS_LOG_WARN(immutable_db_options_.info_log, "Disabled compaction deferment, "
+		    "calling MaybeScheduleFlushOrCompaction()");
+
+		MaybeScheduleFlushOrCompaction();
 	    }
 	}
-
 }
 
 }  // namespace rocksdb
