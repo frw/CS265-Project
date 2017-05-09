@@ -4432,18 +4432,17 @@ void VerifyDBFromDB(std::string& truth_db_name) {
     RandomGenerator gen;
     std::string value;
     int64_t found = 0;
-    int get_weight = 0;
-    int put_weight = 0;
+    int64_t get_weight = 0;
+    int64_t put_weight = 0;
     int64_t reads_done = 0;
     int64_t writes_done = 0;
 
     int num_bins = 2;
-
-    int ratios_per_bin[num_bins] = { 10, 90 };
+    int ratios_per_bin[2] = { 10, 90 };
 
     for (int i = 0; i < num_bins; i++) {
 
-      int total_in_run = readwrites_ / num_bins;
+      int64_t total_in_run = readwrites_ / num_bins;
       Duration duration(FLAGS_duration, total_in_run);
 
       std::unique_ptr<const char[]> key_guard;

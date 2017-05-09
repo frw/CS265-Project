@@ -2624,8 +2624,6 @@ void DBImpl::WaitForIngestFile() {
 #endif  // ROCKSDB_LITE
 
 void DBImpl::RecordReadWriteRatio(Statistics* statistics, uint32_t tickerType, uint64_t count) {
-	RecordTick(statistics, tickerType, count);
-	
 	if (!immutable_db_options_.allow_defer_compaction) {
 		return;
 	}
