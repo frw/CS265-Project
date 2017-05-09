@@ -23,6 +23,10 @@
 #include <gflags/gflags.h>
 #include <inttypes.h>
 #include <stdio.h>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <sstream>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <atomic>
@@ -550,6 +554,8 @@ DEFINE_int32(readwritepercent, 90, "Ratio of reads to reads/writes (expressed"
              " as percentage) for the ReadRandomWriteRandom workload. The "
              "default value 90 means 90% operations out of all reads and writes"
              " operations are reads. In other words, 9 gets for every 1 put.");
+
+DEFINE_string(readwritelst, "10,90", "string to represent bins and read/write ratio per bin");
 
 DEFINE_int32(mergereadpercent, 70, "Ratio of merges to merges&reads (expressed"
              " as percentage) for the ReadRandomMergeRandom workload. The"
@@ -4437,8 +4443,17 @@ void VerifyDBFromDB(std::string& truth_db_name) {
     int64_t reads_done = 0;
     int64_t writes_done = 0;
 
-    int num_bins = 2;
-    int ratios_per_bin[2] = { 10, 90 };
+    //int num_bins = 2;
+
+    std::vector<int> internal;
+    snappy::string word;
+    std::stringstream stream(FLAGS_readwritelst);
+    while(getline(stream, word, ','))
+      internal.push_back(std::stoi(word));
+
+    int num_bins = internal.size();
+
+    //int ratios_per_bin[num_bins] = { 10, 90 };
 
     for (int i = 0; i < num_bins; i++) {
 
@@ -4456,7 +4471,8 @@ void VerifyDBFromDB(std::string& truth_db_name) {
           // one batch completed, reinitialize for next batch
           //get_weight = FLAGS_readwritepercent;
           //put_weight = 100 - get_weight;
-          get_weight = ratios_per_bin[i] * total_in_run / 100;
+          //get_weight = ratios_per_bin[i] * total_in_run / 100;
+          get_weight = internal[i] * total_in_run / 100;
           put_weight = total_in_run - get_weight;
         }
         if (get_weight > 0) {
