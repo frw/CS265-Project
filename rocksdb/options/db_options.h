@@ -78,7 +78,11 @@ struct ImmutableDBOptions {
   bool fail_if_options_file_error;
   bool dump_malloc_stats;
   bool avoid_flush_during_recovery;
+  
   bool allow_defer_compaction;
+  uint64_t rw_ratio_window_size;
+  double enable_compaction_threshold;
+  double disable_compaction_threshold;
 };
 
 struct MutableDBOptions {

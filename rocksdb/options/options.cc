@@ -60,8 +60,6 @@ AdvancedColumnFamilyOptions::AdvancedColumnFamilyOptions(const Options& options)
       num_levels(options.num_levels),
       level0_slowdown_writes_trigger(options.level0_slowdown_writes_trigger),
       level0_stop_writes_trigger(options.level0_stop_writes_trigger),
-      allow_defer_compactions(options.allow_defer_compactions),
-      defer_compactions(options.defer_compactions), 
       target_file_size_base(options.target_file_size_base),
       target_file_size_multiplier(options.target_file_size_multiplier),
       level_compaction_dynamic_level_bytes(
@@ -115,10 +113,6 @@ ColumnFamilyOptions::ColumnFamilyOptions(const Options& options)
       prefix_extractor(options.prefix_extractor),
       max_bytes_for_level_base(options.max_bytes_for_level_base),
       disable_auto_compactions(options.disable_auto_compactions),
-      /*
-      allow_defer_compactions(options.allow_defer_compactions),
-      defer_compactions(options.defer_compactions),
-      */
       table_factory(options.table_factory) {}
 
 DBOptions::DBOptions() {}
@@ -195,6 +189,9 @@ DBOptions::DBOptions(const Options& options)
       dump_malloc_stats(options.dump_malloc_stats),
       avoid_flush_during_recovery(options.avoid_flush_during_recovery),
       allow_defer_compaction(options.allow_defer_compaction),
+      rw_ratio_window_size(options.rw_ratio_window_size),
+      enable_compaction_threshold(options.enable_compaction_threshold),
+      disable_compaction_threshold(options.disable_compaction_threshold),
       avoid_flush_during_shutdown(options.avoid_flush_during_shutdown) {
 }
 
@@ -267,10 +264,6 @@ void ColumnFamilyOptions::Dump(Logger* log) const {
                      level0_slowdown_writes_trigger);
     ROCKS_LOG_HEADER(log, "             Options.level0_stop_writes_trigger: %d",
                      level0_stop_writes_trigger);
-    ROCKS_LOG_HEADER(log, " Options.allow_defer_compactions: %d",
-	allow_defer_compactions);
-    ROCKS_LOG_HEADER(log, " Options.defer_compactions: %d",
-	defer_compactions);
     ROCKS_LOG_HEADER(
         log, "                  Options.target_file_size_base: %" PRIu64,
         target_file_size_base);
@@ -422,9 +415,6 @@ Options::PrepareForBulkLoad()
   soft_pending_compaction_bytes_limit = 0;
   hard_pending_compaction_bytes_limit = 0;
 
-  allow_defer_compactions = false;
-  defer_compactions = false;
-  
   // no auto compactions please. The application should issue a
   // manual compaction after all data is loaded into L0.
   disable_auto_compactions = true;

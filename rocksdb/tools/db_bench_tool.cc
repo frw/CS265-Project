@@ -531,11 +531,17 @@ DEFINE_int32(level0_slowdown_writes_trigger,
              "Number of files in level-0"
              " that will slow down writes.");
 
-//rocksdb::Options().allow_defer_compactions,
-DEFINE_bool(allow_defer_compactions, false,
-    "Whether to allow and enable compaction deferment (cf_options).");
 DEFINE_bool(allow_defer_compaction, false,
     "Whether to allow and enable compaction deferment (db_options).");
+
+DEFINE_uint64(rw_ratio_window_size, 1000, 
+    "How many total transactions to tally before checking read/write ratio");
+
+DEFINE_double(enable_compaction_threshold, 0.75,
+    "Proportion of writes necessary before enabling compaction deferment");
+
+DEFINE_double(disable_compaction_threshold, 0.25,
+    "Proportion of writes necessary before disabling compaction deferment");
 
 DEFINE_int32(level0_file_num_compaction_trigger,
              rocksdb::Options().level0_file_num_compaction_trigger,
@@ -3038,7 +3044,9 @@ void VerifyDBFromDB(std::string& truth_db_name) {
       FLAGS_level0_slowdown_writes_trigger;
     // defer compaction options
     options.allow_defer_compaction = FLAGS_allow_defer_compaction;
-    options.allow_defer_compactions = FLAGS_allow_defer_compactions;
+    options.rw_ratio_window_size = FLAGS_rw_ratio_window_size;
+    options.enable_compaction_threshold = FLAGS_enable_compaction_threshold;
+    options.disable_compaction_threshold = FLAGS_disable_compaction_threshold;
     options.compression = FLAGS_compression_type_e;
     options.compression_opts.level = FLAGS_compression_level;
     options.compression_opts.max_dict_bytes = FLAGS_compression_max_dict_bytes;
@@ -4451,7 +4459,7 @@ void VerifyDBFromDB(std::string& truth_db_name) {
     while(getline(stream, word, ','))
       internal.push_back(std::stoi(word));
 
-    int num_bins = internal.size();
+    int64_t num_bins = internal.size();
 
     //int ratios_per_bin[num_bins] = { 10, 90 };
 

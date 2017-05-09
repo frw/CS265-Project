@@ -319,10 +319,6 @@ struct AdvancedColumnFamilyOptions {
   // Dynamically changeable through SetOptions() API
   int level0_stop_writes_trigger = 36;
 
-  // To allow and enable compaction deferment
-  bool allow_defer_compactions = false;
-  bool defer_compactions = false;
-  
   // Target file size for compaction.
   // target_file_size_base is per-file size for level-1.
   // Target file size for level L can be calculated by

@@ -2628,18 +2628,23 @@ void DBImpl::RecordReadWriteRatio(Statistics* statistics, uint32_t tickerType, u
 		return;
 	}
 
-	if (RecordTick(statistics, RW_RATIO_TOTAL, count) > 1000) {
+	RecordTick(statistics, tickerType, count);
+	
+	if (RecordTick(statistics, RW_RATIO_TOTAL, count) 
+	    > immutable_db_options_.rw_ratio_window_size) {
 		uint64_t reads = statistics->getAndResetTickerCount(RW_RATIO_READS);
 		uint64_t writes = statistics->getAndResetTickerCount(RW_RATIO_WRITES);
 		uint64_t total = statistics->getAndResetTickerCount(RW_RATIO_TOTAL);
 
-	    if (!should_defer_compactions() && (float)(writes) / total > 0.75) {
+	    if (!should_defer_compactions()
+		  && (float)(writes) / total > immutable_db_options_.enable_compaction_threshold) {
 		enable_defer_compactions();
 		ROCKS_LOG_WARN(immutable_db_options_.info_log,
 		    "Read-write Ratio: %llu reads, %llu writes, %llu total\n",
 		    reads, writes, total);
 		ROCKS_LOG_WARN(immutable_db_options_.info_log, "Enabled compaction deferment");
-	    } else if (should_defer_compactions() && (float)(writes) / total < 0.25) {
+	    } else if (should_defer_compactions()
+		  && (float)(writes) / total < immutable_db_options_.disable_compaction_threshold) {
 		disable_defer_compactions();
 		ROCKS_LOG_WARN(immutable_db_options_.info_log,
 		    "Read-write Ratio: %llu reads, %llu writes, %llu total\n",

@@ -138,8 +138,6 @@ struct MutableCFOptions {
             options.level0_file_num_compaction_trigger),
         level0_slowdown_writes_trigger(options.level0_slowdown_writes_trigger),
         level0_stop_writes_trigger(options.level0_stop_writes_trigger),
-	defer_compactions(options.defer_compactions), 
-	allow_defer_compactions(options.allow_defer_compactions),
         max_compaction_bytes(options.max_compaction_bytes),
         target_file_size_base(options.target_file_size_base),
         target_file_size_multiplier(options.target_file_size_multiplier),
@@ -169,8 +167,6 @@ struct MutableCFOptions {
         level0_file_num_compaction_trigger(0),
         level0_slowdown_writes_trigger(0),
         level0_stop_writes_trigger(0),
-	defer_compactions(false), 
-	allow_defer_compactions(false), 
         max_compaction_bytes(0),
         target_file_size_base(0),
         target_file_size_multiplier(0),
@@ -216,8 +212,6 @@ struct MutableCFOptions {
   int level0_file_num_compaction_trigger;
   int level0_slowdown_writes_trigger;
   int level0_stop_writes_trigger;
-  bool defer_compactions;
-  bool allow_defer_compactions;
   uint64_t max_compaction_bytes;
   uint64_t target_file_size_base;
   int target_file_size_multiplier;

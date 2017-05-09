@@ -86,7 +86,10 @@ ImmutableDBOptions::ImmutableDBOptions(const DBOptions& options)
       fail_if_options_file_error(options.fail_if_options_file_error),
       dump_malloc_stats(options.dump_malloc_stats),
       avoid_flush_during_recovery(options.avoid_flush_during_recovery),
-      allow_defer_compaction(options.allow_defer_compaction) {
+      allow_defer_compaction(options.allow_defer_compaction),
+      rw_ratio_window_size(options.rw_ratio_window_size),
+      enable_compaction_threshold(options.enable_compaction_threshold),
+      disable_compaction_threshold(options.disable_compaction_threshold) {
 }
 
 void ImmutableDBOptions::Dump(Logger* log) const {
@@ -218,6 +221,12 @@ void ImmutableDBOptions::Dump(Logger* log) const {
                    avoid_flush_during_recovery);
   ROCKS_LOG_HEADER(log, "            Options.allow_defer_compaction: %d",
                    allow_defer_compaction);
+  ROCKS_LOG_HEADER(log, "            Options.rw_ratio_window_size: %" PRIu64,
+                   rw_ratio_window_size);
+  ROCKS_LOG_HEADER(log, "            Options.enable_compaction_threshold: %f",
+                   enable_compaction_threshold);
+  ROCKS_LOG_HEADER(log, "            Options.disable_compaction_threshold: %f",
+                   disable_compaction_threshold);
 }
 
 MutableDBOptions::MutableDBOptions()

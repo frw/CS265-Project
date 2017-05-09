@@ -270,11 +270,6 @@ struct ColumnFamilyOptions : public AdvancedColumnFamilyOptions {
   explicit ColumnFamilyOptions(const Options& options);
 
   void Dump(Logger* log) const;
-
-  /*
-  bool allow_defer_compactions = false;
-  bool defer_compactions = false;
-  */
 };
 
 enum class WALRecoveryMode : char {
@@ -843,6 +838,9 @@ struct DBOptions {
   bool avoid_flush_during_recovery = false;
 
   bool allow_defer_compaction = false;
+  uint64_t rw_ratio_window_size = 1000;
+  double enable_compaction_threshold = 0.75;
+  double disable_compaction_threshold = 0.25;
   
   // By default RocksDB will flush all memtables on DB close if there are
   // unpersisted data (i.e. with WAL disabled) The flush can be skip to speedup

@@ -2048,10 +2048,6 @@ void rocksdb_options_set_level0_stop_writes_trigger(
   opt->rep.level0_stop_writes_trigger = n;
 }
 
-void rocksdb_options_set_allow_defer_compactions(rocksdb_options_t* opt, int n) {
-	opt->rep.allow_defer_compactions = n;
-}
-
 void rocksdb_options_set_max_mem_compaction_level(rocksdb_options_t* opt,
                                                   int n) {}
 
