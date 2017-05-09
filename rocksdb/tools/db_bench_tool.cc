@@ -103,6 +103,7 @@ DEFINE_string(
     "readwhilewriting,"
     "readwhilemerging,"
     "readrandomwriterandom,"
+    "readwritegranular,"
     "updaterandom,"
     "randomwithverify,"
     "fill100K,"
@@ -2382,6 +2383,8 @@ void VerifyDBFromDB(std::string& truth_db_name) {
         method = &Benchmark::ReadWhileMerging;
       } else if (name == "readrandomwriterandom") {
         method = &Benchmark::ReadRandomWriteRandom;
+      } else if (name == "readwritegranular") {
+        method = &Benchmark::ReadWriteGranular;
       } else if (name == "readrandommergerandom") {
         if (FLAGS_merge_operator.empty()) {
           fprintf(stdout, "%-12s : skipped (--merge_operator is unknown)\n",
@@ -4421,6 +4424,73 @@ void VerifyDBFromDB(std::string& truth_db_name) {
     thread->stats.AddMessage(msg);
   }
 
+  void ReadWriteGranular(ThreadState* thread) {
+    ReadOptions options(FLAGS_verify_checksum, true);
+    RandomGenerator gen;
+    std::string value;
+    int64_t found = 0;
+    int get_weight = 0;
+    int put_weight = 0;
+    int64_t reads_done = 0;
+    int64_t writes_done = 0;
+
+    int num_bins = 2;
+
+    int ratios_per_bin[num_bins] = { 10, 90 };
+
+    for (int i = 0; i < num_bins; i++) {
+
+      int total_in_run = readwrites_ / num_bins;
+      Duration duration(FLAGS_duration, total_in_run);
+
+      std::unique_ptr<const char[]> key_guard;
+      Slice key = AllocateKey(&key_guard);
+
+      // the number of iterations is the larger of read_ or write_
+      while (!duration.Done(1)) {
+        DB* db = SelectDB(thread);
+        GenerateKeyFromInt(thread->rand.Next() % FLAGS_num, FLAGS_num, &key);
+        if (get_weight == 0 && put_weight == 0) {
+          // one batch completed, reinitialize for next batch
+          //get_weight = FLAGS_readwritepercent;
+          //put_weight = 100 - get_weight;
+          get_weight = ratios_per_bin[i] * total_in_run / 100;
+          put_weight = total_in_run - get_weight;
+        }
+        if (get_weight > 0) {
+          // do all the gets first
+          Status s = db->Get(options, key, &value);
+          if (!s.ok() && !s.IsNotFound()) {
+            fprintf(stderr, "get error: %s\n", s.ToString().c_str());
+            // we continue after error rather than exiting so that we can
+            // find more errors if any
+          } else if (!s.IsNotFound()) {
+            found++;
+          }
+          get_weight--;
+          reads_done++;
+          thread->stats.FinishedOps(nullptr, db, 1, kRead);
+        } else  if (put_weight > 0) {
+          // then do all the corresponding number of puts
+          // for all the gets we have done earlier
+          Status s = db->Put(write_options_, key, gen.Generate(value_size_));
+          if (!s.ok()) {
+            fprintf(stderr, "put error: %s\n", s.ToString().c_str());
+            exit(1);
+          }
+          put_weight--;
+          writes_done++;
+          thread->stats.FinishedOps(nullptr, db, 1, kWrite);
+        }
+      }
+    }
+    char msg[100];
+    snprintf(msg, sizeof(msg), "( reads:%" PRIu64 " writes:%" PRIu64 \
+             " total:%" PRIu64 " found:%" PRIu64 ")",
+             reads_done, writes_done, readwrites_, found);
+    thread->stats.AddMessage(msg);
+  }
+
   // This is different from ReadWhileWriting because it does not use
   // an extra thread.
   void ReadRandomWriteRandom(ThreadState* thread) {
@@ -5162,3 +5232,5 @@ int db_bench_tool(int argc, char** argv) {
 }
 }  // namespace rocksdb
 #endif
+
+
