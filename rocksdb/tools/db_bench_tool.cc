@@ -4452,8 +4452,8 @@ void VerifyDBFromDB(std::string& truth_db_name) {
     int64_t reads_done = 0;
     int64_t writes_done = 0;
 
-    int64_t total_read_time = 0;
-    int64_t total_write_time = 0;
+    uint64_t total_read_time = 0;
+    uint64_t total_write_time = 0;
 
     //int num_bins = 2;
 
@@ -4503,7 +4503,7 @@ void VerifyDBFromDB(std::string& truth_db_name) {
           get_weight--;
           if (get_weight == 0) {
               end= std::chrono::steady_clock::now();
-	      int elapsed = std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
+	      uint64_t elapsed = std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
               //fprintf(stdout, "Read: %i\n", elapsed);
               total_read_time += elapsed;
               begin = std::chrono::steady_clock::now();
@@ -4521,7 +4521,7 @@ void VerifyDBFromDB(std::string& truth_db_name) {
           put_weight--;
           if (put_weight == 0) {
               end= std::chrono::steady_clock::now();
-	      int elapsed = std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
+	      uint64_t elapsed = std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
               //fprintf(stdout, "Write: %i\n", elapsed);
               total_write_time += elapsed;
               begin = std::chrono::steady_clock::now();
@@ -4532,8 +4532,15 @@ void VerifyDBFromDB(std::string& truth_db_name) {
       }
     }
 
-    float read_throughput = (float) total_read_time / (float) reads_done;
-    float write_throughput = (float) total_write_time / (float) writes_done;
+    if (total_read_time == 0) {
+	    total_read_time = 1;
+    }
+    if (total_write_time == 0) {
+	    total_write_time = 1;
+    }
+
+    double read_throughput = (double) reads_done * 1000000 / total_read_time;
+    double write_throughput = (double) writes_done * 1000000 / total_write_time;
 
     //float read_throughput = (float) total_read_time;
     //float write_throughput = (float) total_write_time;
