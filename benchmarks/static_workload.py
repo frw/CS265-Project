@@ -12,7 +12,11 @@ writer = csv.writer(output, delimiter=',')
 
 read_percentages = []
 control_results = []
+control_read_results = []
+control_write_results = []
 experimental_results = []
+experimental_read_results = []
+experimental_write_results = []
 for i in range(11):
     read_percent = i * 10
     read_percentages.append(read_percent)
@@ -22,6 +26,10 @@ for i in range(11):
 
     control_total_time = 0
     experimental_total_time = 0
+    control_read_throughput = 0
+    control_write_througput = 0
+    experimental_read_throughput = 0
+    experimental_write_throughput = 0
 
     for run in range(TRIALS):
         # Run control
@@ -30,18 +38,36 @@ for i in range(11):
         end_time = timeit.default_timer()
         control_total_time += (end_time - start_time)
 
+        # Read file to get control read+write throughput
+        f = open('example.txt', 'r')
+        control_read_throughput = f.readline()
+        #print control_read_throughput
+        control_write_througput = f.readline()
+        #print control_write_througput
+        f.close()
+
         # Run experimental
         start_time = timeit.default_timer()
         os.system(experimental)
         end_time = timeit.default_timer()
         experimental_total_time += (end_time - start_time)
 
-    control_results.append(control_total_time / TRIALS)
-    experimental_results.append(experimental_total_time / TRIALS)
+        # Read file to get experimental read+write throughput
+        f = open('example.txt', 'r')
+        experimental_read_throughput = f.readline()
+        experimental_write_throughput = f.readline()
+        f.close()
 
-columns = [read_percentages, control_results, experimental_results]
+    control_results.append(control_total_time / TRIALS)
+    control_read_results.append(control_read_throughput)
+    control_write_results.append(control_write_througput)
+    experimental_results.append(experimental_total_time / TRIALS)
+    experimental_read_results.append(experimental_read_throughput)
+    experimental_write_results.append(experimental_write_throughput)
+
+columns = [read_percentages, control_results, control_read_results, control_write_results, experimental_results, experimental_read_results, experimental_write_results]
 rows = zip(*columns)
-writer.writerow(["Read percentages", "Control", "Experimental"])
+writer.writerow(["Read percentages", "Control", "ControlReads", "ControlWrites", "Experimental", "ExperimentalReads", "ExperimentalWrites"])
 for row in rows:
     writer.writerow(row)
 

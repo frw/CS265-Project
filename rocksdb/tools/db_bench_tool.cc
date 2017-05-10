@@ -4503,7 +4503,7 @@ void VerifyDBFromDB(std::string& truth_db_name) {
           get_weight--;
           if (get_weight == 0) {
               end= std::chrono::steady_clock::now();
-	      int elapsed = std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count();
+	      int elapsed = std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
               //fprintf(stdout, "Read: %i\n", elapsed);
               total_read_time += elapsed;
               begin = std::chrono::steady_clock::now();
@@ -4521,7 +4521,7 @@ void VerifyDBFromDB(std::string& truth_db_name) {
           put_weight--;
           if (put_weight == 0) {
               end= std::chrono::steady_clock::now();
-	      int elapsed = std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count();
+	      int elapsed = std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
               //fprintf(stdout, "Write: %i\n", elapsed);
               total_write_time += elapsed;
               begin = std::chrono::steady_clock::now();
