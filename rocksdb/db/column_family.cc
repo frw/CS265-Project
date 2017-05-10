@@ -655,7 +655,6 @@ void ColumnFamilyData::RecalculateWriteStallConditions(
 
     bool was_stopped = write_controller->IsStopped();
     bool needed_delay = write_controller->NeedsDelay();
-    int total_compaction_pressure = write_controller->total_compaction_pressure();
 
     if (imm()->NumNotFlushed() >= mutable_cf_options.max_write_buffer_number) {
       write_controller_token_ = write_controller->GetStopToken();
