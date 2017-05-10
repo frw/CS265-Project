@@ -49,6 +49,7 @@ for num_bins in range(1, 11):
         control_total_read_throughput += float(f.readline().strip())
         control_total_write_throughput += float(f.readline().strip())
         f.close()
+        os.remove('example.txt')
 
         # Run experimental
         start_time = timeit.default_timer()
@@ -61,6 +62,7 @@ for num_bins in range(1, 11):
         experimental_total_read_throughput += float(f.readline().strip())
         experimental_total_write_throughput += float(f.readline().strip())
         f.close()
+        os.remove('example.txt')
 
     control_results.append(control_total_time / TRIALS)
     control_read_results.append(control_total_read_throughput / TRIALS)
