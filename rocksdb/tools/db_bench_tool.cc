@@ -24,6 +24,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -4451,6 +4452,9 @@ void VerifyDBFromDB(std::string& truth_db_name) {
     int64_t reads_done = 0;
     int64_t writes_done = 0;
 
+    int64_t total_read_time = 0;
+    int64_t total_write_time = 0;
+
     //int num_bins = 2;
 
     std::vector<int> internal;
@@ -4464,6 +4468,9 @@ void VerifyDBFromDB(std::string& truth_db_name) {
     //int ratios_per_bin[num_bins] = { 10, 90 };
 
     for (int i = 0; i < num_bins; i++) {
+      std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+      std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
 
       int64_t total_in_run = readwrites_ / num_bins;
       Duration duration(FLAGS_duration, total_in_run);
@@ -4494,6 +4501,12 @@ void VerifyDBFromDB(std::string& truth_db_name) {
             found++;
           }
           get_weight--;
+          if (get_weight == 0) {
+              end= std::chrono::steady_clock::now();
+	      int elapsed = std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
+              total_read_time += elapsed;
+              begin = std::chrono::steady_clock::now();
+          }
           reads_done++;
           thread->stats.FinishedOps(nullptr, db, 1, kRead);
         } else  if (put_weight > 0) {
@@ -4505,15 +4518,37 @@ void VerifyDBFromDB(std::string& truth_db_name) {
             exit(1);
           }
           put_weight--;
+          if (put_weight == 0) {
+              end= std::chrono::steady_clock::now();
+	      int elapsed = std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
+              total_write_time += elapsed;
+              begin = std::chrono::steady_clock::now();
+          }
           writes_done++;
           thread->stats.FinishedOps(nullptr, db, 1, kWrite);
         }
       }
     }
+
+    float read_throughput = (float) total_read_time / (float) reads_done;
+    float write_throughput = (float) total_write_time / (float) writes_done;
+
     char msg[100];
+    char msg2[100];
+    
     snprintf(msg, sizeof(msg), "( reads:%" PRIu64 " writes:%" PRIu64 \
              " total:%" PRIu64 " found:%" PRIu64 ")",
              reads_done, writes_done, readwrites_, found);
+
+    snprintf(msg2, sizeof(msg2), "%f\n%f",
+             read_throughput, write_throughput);
+
+    std::ofstream myfile;
+    myfile.open ("example.txt");
+    myfile << msg2;
+    myfile.close();
+
+    thread->stats.AddMessage(msg2);
     thread->stats.AddMessage(msg);
   }
 
