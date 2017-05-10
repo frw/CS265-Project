@@ -32,6 +32,7 @@ for num_bins in range(1, 11):
     experimental_total_time = 0
 
     for run in range(TRIALS):
+        print "Changing Workload (Num bins: %s, Trial no.: %s)" % (num_bins, run)
         # Run control
         start_time = timeit.default_timer()
         os.system(control)

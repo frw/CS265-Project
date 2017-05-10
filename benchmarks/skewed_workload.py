@@ -33,6 +33,7 @@ for read_percent in range(11):
     experimental_write_throughput = 0
 
     for run in range(TRIALS):
+        print "Skewed Workload (Read percent: %s, Trial no.: %s)" % (read_percent, run)
         # Run control
         start_time = timeit.default_timer()
         os.system(control)

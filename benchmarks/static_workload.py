@@ -32,6 +32,7 @@ for i in range(11):
     experimental_write_throughput = 0
 
     for run in range(TRIALS):
+	print "Static Workload (Read percent: %s, Trial no.: %s)" % (read_percent, run)
         # Run control
         start_time = timeit.default_timer()
         os.system(control)
