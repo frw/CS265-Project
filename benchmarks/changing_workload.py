@@ -29,10 +29,15 @@ for num_bins in range(1, 11):
     experimental = DB_BENCH_CMD + " --use_existing_db=0 --num=" + str(NUM) + " --level0_stop_writes_trigger=500 --level0_slowdown_writes_trigger=500 --level0_file_num_compaction_trigger=4 --statistics=0 --benchmarks=readwritegranular --allow_defer_compaction=true --readwritelst=" + readwritelst + " > /dev/null"
 
     control_total_time = 0
+    control_total_read_throughput = 0
+    control_total_write_throughput = 0
     experimental_total_time = 0
+    experimental_total_read_throughput = 0
+    experimental_total_write_throughput = 0
 
     for run in range(TRIALS):
         print "Changing Workload (Num bins: %s, Trial no.: %s)" % (num_bins, run)
+
         # Run control
         start_time = timeit.default_timer()
         os.system(control)
@@ -41,10 +46,8 @@ for num_bins in range(1, 11):
 
         # Read file to get control read+write throughput
         f = open('example.txt', 'r')
-        control_read_throughput = f.readline().strip()
-        #print control_read_throughput
-        control_write_througput = f.readline().strip()
-        #print control_write_througput
+        control_total_read_throughput += float(f.readline().strip())
+        control_total_write_throughput += float(f.readline().strip())
         f.close()
 
         # Run experimental
@@ -55,16 +58,16 @@ for num_bins in range(1, 11):
 
         # Read file to get experimental read+write throughput
         f = open('example.txt', 'r')
-        experimental_read_throughput = f.readline().strip()
-        experimental_write_throughput = f.readline().strip()
+        experimental_total_read_throughput += float(f.readline().strip())
+        experimental_total_write_throughput += float(f.readline().strip())
         f.close()
 
     control_results.append(control_total_time / TRIALS)
-    control_read_results.append(control_read_throughput)
-    control_write_results.append(control_write_througput)
+    control_read_results.append(control_total_read_throughput / TRIALS)
+    control_write_results.append(control_total_write_throughput / TRIALS)
     experimental_results.append(experimental_total_time / TRIALS)
-    experimental_read_results.append(experimental_read_throughput)
-    experimental_write_results.append(experimental_write_throughput)
+    experimental_read_results.append(experimental_total_read_throughput / TRIALS)
+    experimental_write_results.append(experimental_total_write_throughput / TRIALS)
 
 columns = [bin_sizes, control_results, control_read_results, control_write_results, experimental_results, experimental_read_results, experimental_write_results]
 rows = zip(*columns)
