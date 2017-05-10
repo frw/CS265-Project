@@ -40,8 +40,8 @@ for num_bins in range(1, 11):
         end_time = timeit.default_timer()
         experimental_total_time += (end_time - start_time)
 
-    control_results.append(control_total_time / 10)
-    experimental_results.append(experimental_total_time / 10)
+    control_results.append(control_total_time / TRIALS)
+    experimental_results.append(experimental_total_time / TRIALS)
 
 columns = [bin_sizes, control_results, experimental_results]
 rows = zip(*columns)
