@@ -41,9 +41,9 @@ for read_percent in range(11):
 
         # Read file to get control read+write throughput
         f = open('example.txt', 'r')
-        control_read_throughput = f.readline()
+        control_read_throughput = f.readline().strip()
         #print control_read_throughput
-        control_write_througput = f.readline()
+        control_write_througput = f.readline().strip()
         #print control_write_througput
         f.close()
 
@@ -55,8 +55,8 @@ for read_percent in range(11):
 
         # Read file to get experimental read+write throughput
         f = open('example.txt', 'r')
-        experimental_read_throughput = f.readline()
-        experimental_write_throughput = f.readline()
+        experimental_read_throughput = f.readline().strip()
+        experimental_write_throughput = f.readline().strip()
         f.close()
 
     control_results.append(control_total_time / TRIALS)
