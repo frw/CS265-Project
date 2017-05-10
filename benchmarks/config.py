@@ -1,0 +1,5 @@
+TRIALS = 10
+
+NUM = 5242880
+NUM = 4096
+DB_BENCH_CMD = "./db_bench"

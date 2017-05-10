@@ -5,7 +5,8 @@ import os
 import sys
 import timeit
 
-num = sys.argv[1]
+from config import *
+
 output = open('results_skewed_workload.csv', 'w')
 writer = csv.writer(output, delimiter=',')
 
@@ -15,15 +16,15 @@ experimental_results = []
 for read_percent in range(11):
     read_percent *= 10
     read_percentages.append(read_percent)
-    
+
     readwritelst = str(read_percent) + "," + str(100 - read_percent)
-    control = "/Users/emasatsugu/Desktop/CS265/Project/CS265-Project/rocksdb/db_bench --use_existing_db=0 --num=" + str(num) + " --level0_stop_writes_trigger=20 --level0_slowdown_writes_trigger=12 --level0_file_num_compaction_trigger=4 --statistics=0 --benchmarks=readwritegranular --allow_defer_compaction=false --readwritelst=" + readwritelst + " > /dev/null"
-    experimental = "/Users/emasatsugu/Desktop/CS265/Project/CS265-Project/rocksdb/db_bench --use_existing_db=0 --num=" + str(num) + " --level0_stop_writes_trigger=500 --level0_slowdown_writes_trigger=500 --level0_file_num_compaction_trigger=4 --statistics=0 --benchmarks=readwritegranular --allow_defer_compaction=true --readwritelst=" + readwritelst + " > /dev/null"
+    control = DB_BENCH_CMD + " --use_existing_db=0 --num=" + str(NUM) + " --level0_stop_writes_trigger=20 --level0_slowdown_writes_trigger=12 --level0_file_num_compaction_trigger=4 --statistics=0 --benchmarks=readwritegranular --allow_defer_compaction=false --readwritelst=" + readwritelst + " > /dev/null"
+    experimental = DB_BENCH_CMD + " --use_existing_db=0 --num=" + str(NUM) + " --level0_stop_writes_trigger=500 --level0_slowdown_writes_trigger=500 --level0_file_num_compaction_trigger=4 --statistics=0 --benchmarks=readwritegranular --allow_defer_compaction=true --readwritelst=" + readwritelst + " > /dev/null"
 
     control_total_time = 0
     experimental_total_time = 0
-    
-    for run in range(10):
+
+    for run in range(TRIALS):
         # Run control
         start_time = timeit.default_timer()
         os.system(control)
@@ -38,7 +39,7 @@ for read_percent in range(11):
 
     control_results.append(control_total_time / 10)
     experimental_results.append(experimental_total_time / 10)
-  
+
 columns = [read_percentages, control_results, experimental_results]
 rows = zip(*columns)
 writer.writerow(["Read percentages", "Control", "Experimental"])
