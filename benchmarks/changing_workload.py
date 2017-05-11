@@ -39,7 +39,8 @@ for num_bins in range(1, 11):
     for run in range(TRIALS):
         print "Changing Workload (Num bins: %s, Trial no.: %s)" % (num_bins, run)
 
-        shutil.rmtree(DB_LOCATION)
+        if os.path.exists(DB_LOCATION):
+            shutil.rmtree(DB_LOCATION)
         shutil.copytree(DB_EXISTING, DB_LOCATION)
 
         # Run control
@@ -55,7 +56,8 @@ for num_bins in range(1, 11):
         f.close()
         os.remove('example.txt')
 
-        shutil.rmtree(DB_LOCATION)
+        if os.path.exists(DB_LOCATION):
+            shutil.rmtree(DB_LOCATION)
         shutil.copytree(DB_EXISTING, DB_LOCATION)
 
         # Run experimental
