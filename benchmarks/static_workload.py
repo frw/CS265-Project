@@ -67,6 +67,9 @@ for i in range(11):
     experimental_read_results.append(experimental_total_read_throughput / TRIALS)
     experimental_write_results.append(experimental_total_write_throughput / TRIALS)
 
+    print control_results[-1], control_read_results[-1], control_write_results[-1], \
+          experimental_results[-1], experimental_read_results[-1], experimental_write_results[-1]
+
 columns = [read_percentages, control_results, control_read_results, control_write_results, experimental_results, experimental_read_results, experimental_write_results]
 rows = zip(*columns)
 writer.writerow(["Read percentages", "Control", "ControlReads", "ControlWrites", "Experimental", "ExperimentalReads", "ExperimentalWrites"])
