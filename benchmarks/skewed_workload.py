@@ -4,6 +4,7 @@ import csv
 import os
 import sys
 import timeit
+import shutil
 
 from config import *
 
@@ -22,8 +23,8 @@ for read_percent in range(11):
     read_percentages.append(read_percent)
 
     readwritelst = str(read_percent) + "," + str(100 - read_percent)
-    control = DB_BENCH_CMD + " --use_existing_db=0 --num=" + str(NUM) + " --level0_stop_writes_trigger=20 --level0_slowdown_writes_trigger=12 --level0_file_num_compaction_trigger=4 --statistics=0 --benchmarks=readwritegranular --allow_defer_compaction=false --readwritelst=" + readwritelst + " > /dev/null"
-    experimental = DB_BENCH_CMD + " --use_existing_db=0 --num=" + str(NUM) + " --level0_stop_writes_trigger=500 --level0_slowdown_writes_trigger=500 --level0_file_num_compaction_trigger=4 --statistics=0 --benchmarks=readwritegranular --allow_defer_compaction=true --readwritelst=" + readwritelst + " > /dev/null"
+    control = DB_BENCH_CMD + " --use_existing_db=1 --num=" + str(NUM) + " --level0_stop_writes_trigger=20 --level0_slowdown_writes_trigger=12 --level0_file_num_compaction_trigger=4 --statistics=0 --benchmarks=readwritegranular --allow_defer_compaction=false --readwritelst=" + readwritelst + " > /dev/null"
+    experimental = DB_BENCH_CMD + " --use_existing_db=1 --num=" + str(NUM) + " --level0_stop_writes_trigger=500 --level0_slowdown_writes_trigger=500 --level0_file_num_compaction_trigger=4 --statistics=0 --benchmarks=readwritegranular --allow_defer_compaction=true --readwritelst=" + readwritelst + " > /dev/null"
 
     control_total_time = 0
     control_total_read_throughput = 0
@@ -34,6 +35,9 @@ for read_percent in range(11):
 
     for run in range(TRIALS):
         print "Skewed Workload (Read percent: %s, Trial no.: %s)" % (read_percent, run)
+
+        shutil.rmtree(DB_LOCATION)
+        shutil.copytree(DB_EXISTING, DB_LOCATION)
 
         # Run control
         start_time = timeit.default_timer()
@@ -47,6 +51,9 @@ for read_percent in range(11):
         control_total_write_throughput += float(f.readline().strip())
         f.close()
         os.remove('example.txt')
+
+        shutil.rmtree(DB_LOCATION)
+        shutil.copytree(DB_EXISTING, DB_LOCATION)
 
         # Run experimental
         start_time = timeit.default_timer()
